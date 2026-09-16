@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Dados locais gerados nos exercícios
+*.db
+*.sqlite
+dados_raw/
+output/
+
+# SO / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

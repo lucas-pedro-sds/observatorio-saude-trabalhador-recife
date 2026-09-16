@@ -1,0 +1,11 @@
+pandas>=2.2
+numpy>=1.26
+requests>=2.31
+SQLAlchemy>=2.0
+psycopg2-binary>=2.9
+python-dotenv>=1.0
+jupyter>=1.0
+matplotlib>=3.8
+seaborn>=0.13
+openpyxl>=3.1
+unidecode>=1.3
