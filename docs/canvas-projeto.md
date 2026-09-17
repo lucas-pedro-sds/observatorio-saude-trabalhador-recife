@@ -37,29 +37,29 @@ A gerência da VISAT (Vigilância em Saúde do Trabalhador), responsável por de
 
 ## 3. Perguntas analíticas
 
-| # | Pergunta | Que decisão ela informa? | Respondível com os dados? (verificado na amostra) |
-|---|---|---|---|
-| 1 | Onde se concentram os acidentes e adoecimentos, por território e por CNAE? | | |
-| 2 | Que ocupações (CBO) e diagnósticos (CID-10) aparecem mais, e o perfil mudou? | | |
-| 3 | Onde há muito vínculo formal e pouca notificação — sinal de subnotificação, não de segurança? | | |
-| 4 (opcional) | | | |
-| 5 (opcional) | | | |
+| #            | Pergunta                                                                                      | Que decisão ela informa?                                      | Respondível com os dados? (verificado na amostra) |
+| ------------ | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------- |
+| 1            | Onde se concentram os acidentes e adoecimentos, por território e por CNAE?                    | Onde priorizar inspeções e ações territoriais                 | Sim (CAT + RAIS)                                  |
+| 2            | Que ocupações (CBO) e diagnósticos (CID-10) aparecem mais, e o perfil mudou?                  | Quais grupos prioritários e tendências                        | Sim (CAT)                                         |
+| 3            | Onde há muito vínculo formal e pouca notificação — sinal de subnotificação, não de segurança? | Onde investigar subnotificação vs. real segurança             | Sim (CAT + RAIS)                                  |
+| 4 (opcional) | A procura pela rede de saúde acompanha o mapa do trabalho formal ou aponta para o informal?   | Ajustar oferta de serviços vs. informalidade                  | Parcial (CAT + RAIS; SINAN depois)                |
 
 ---
 
 ## 4. Fontes de dados
 
-| Fonte | Link | Formato | Volume estimado | Licença/acesso | Amostra baixada e aberta? (sim/não) | Colunas-chave confirmadas na amostra |
-|---|---|---|---|---|---|---|
-| Comunicação de Acidente de Trabalho (CAT) | https://dados.gov.br/dados/conjuntos-dados/inss-comunicacao-de-acidente-de-trabalho-cat1 | CSV | Nacional (recorte Pernambuco) | Livre | Sim | Agente Causador, Data Acidente, CBO, CID-10, CNAE 2.0 Empregador, Emitente CAT, Óbito, Munic Empr, Natureza da Lesão, Sexo |
-| Cadastro Geral de Empregados e Desempregados (CAGED) | https://basedosdados.org/dataset/562b56a3-0b01-4735-a049-eeac5681f056?table=95106d6f-e36e-4fed-b8e9-99c41cd99ecf | SQL/CSV | Nacional (recorte Pernambuco) | Livre | Não | saldo_movimentacao, tipo_movimentacao, causa_desligamento, cbo_2002, idade, sexo, raca_cor, grau_instrucao, cnae_2_0_subclasse, salario_mensal, qtd_dias_trabalhados, id_municipio, sigla_uf |
-| Relação Anual de Informações Sociais (RAIS) | https://basedosdados.org/dataset/3e7c4d58-96ba-448e-b053-d385a829ef00?table=86b69f96-0bfe-45da-833b-6edc9a0af213 | SQL/CSV | Nacional (recorte Pernambuco) | Livre | Não | causa_afastamento, qtd_dias_afastamento, causa_desligamento, mes_admissao, mes_desligamento, cbo_2002, idade, sexo, raca_cor, grau_instrucao, tempo_emprego, cnae_2_0, qtd_hora_contratual, tamanho_estabelecimento, id_municipio, valor_remunera_media |
+| Fonte                                                | Link                                                                                                             | Formato | Volume estimado               | Licença/acesso          | Amostra baixada e aberta? | Colunas-chave confirmadas na amostra |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------- | ----------------------------- | ----------------------- | ------------------------- | ------------------------------------ |
+| Comunicação de Acidente de Trabalho (CAT)            | https://dadosabertos.inss.gov.br/dataset/inss-comunicacao-de-acidente-de-trabalho-cat                            | CSV/ZIP | Nacional (recorte Recife)     | Pública e gratuita      | Sim                       | Agente Causador, Data Acidente, CBO, CID-10, CNAE 2.0, Município, Natureza da Lesão, Sexo |
+| Relação Anual de Informações Sociais (RAIS)          | https://basedosdados.org/dataset/3e7c4d58-96ba-448e-b053-d385a829ef00                                           | SQL/CSV | Nacional (recorte Recife)     | Pública e gratuita      | Não                       | CBO, CNAE, município, vínculos, sexo, idade |
+| Cadastro Geral de Empregados e Desempregados (CAGED) | https://basedosdados.org/dataset/562b56a3-0b01-4735-a049-eeac5681f056                                           | SQL/CSV | Nacional (recorte Recife)     | Pública e gratuita      | Não                       | CBO, CNAE, município, movimentação |
+| SINAN (Doenças e Agravos de Notificação)             | https://datasus.saude.gov.br/acesso-a-informacao/doencas-e-agravos-de-notificacao-de-2007-em-diante-sinan/       | DBF/CSV | Nacional                      | Pública e gratuita      | Não                       | Notificações de agravos relacionados ao trabalho |
+| CBO (Classificação Brasileira de Ocupações)          | https://www.gov.br/trabalho-e-emprego/pt-br/assuntos/cbo                                                        | Excel/CSV | Pequeno                     | Pública e gratuita      | Sim                       | Código e nome da ocupação |
+| CONCLA / CNAE (Classificação Nacional de Atividades Econômicas) | https://concla.ibge.gov.br                                                                              | Excel/CSV | Pequeno                     | Pública e gratuita      | Sim                       | Código e nome da atividade econômica |
 
 ---
 
 ## 5. Escopo e entregáveis — a regra do fatiável
-
-Defina primeiro a fatia mínima: o menor recorte que ainda exercita o ciclo completo (banco → pipeline → análise → dashboard). Ela é o compromisso da equipe. As extensões só entram se a fatia mínima estiver pronta — e nada entra após o congelamento de escopo (05/10).
 
 **Fatia mínima (compromisso):**
 
@@ -70,32 +70,33 @@ Defina primeiro a fatia mínima: o menor recorte que ainda exercita o ciclo comp
 **Extensões desejáveis (apenas se sobrar tempo):**
 
 ```
-(ex.: ampliar para o Nordeste; incluir cobertura vacinal)
+- Incluir dados do SINAN (agravos relacionados ao trabalho)
+- Incluir PNAD (para estimar informalidade)
+- Melhorar a granularidade territorial (se possível chegar em bairro)
 ```
 
 **Fora de escopo (o que decidimos NÃO fazer):**
 
 ```
-(ex.: Municípios diferentes de Recife; )
-(ex.: Períodos anteriores aos últimos 3 anos definidos )
+- Área institucional com repositório e buscador de legislação (desenvolvimento de portal — já separado pela demandante)
+- Outros municípios além de Recife
+- Períodos anteriores aos últimos 3 anos
+- Modelos preditivos / Machine Learning
 ```
 ---
 
 ## 6. Riscos e mitigação
 
-Ao menos 3 riscos do **seu** projeto (não genéricos). Consulte a tabela de riscos comuns no [`guia-do-projeto.md`](guia-do-projeto.md).
-
 | Risco | Sinal precoce | Mitigação | Responsável por monitorar |
-|---|---|---|---|
-| | | | |
-| | | | |
-| | | | |
+|-------|---------------|-----------|---------------------------|
+| Granularidade dos dados é por município (cidade) e não por bairro | Não encontrar coluna de bairro na CAT ou RAIS | Documentar a limitação no README e no canvas; usar município + CNAE como recorte territorial; tentar geocodificação ou agregação se sobrar tempo | Análise |
+| Volume muito grande da CAT e da RAIS | Download lento, erro de memória ou pipeline travando | Filtrar apenas Recife e os últimos 3 anos desde a coleta; processar em chunks; manter amostra pequena para testes | Engenharia de Dados / Pipeline |
+| Versões diferentes de CNAE e CBO entre as bases | Join falhando ou códigos não baterem | Baixar as tabelas oficiais da CONCLA e da CBO antes de fazer o join; criar tabelas de dimensão no banco | Modelagem e Banco de Dados |
+| Escopo crescer demais (querer colocar SINAN + PNAD + mapa fino cedo) | Canvas com muitas extensões ou novas perguntas no meio do sprint | Seguir a regra do fatiável: entregar a fatia mínima (CAT + RAIS) primeiro; só depois adicionar extensões | Coordenação / PO |
 
 ---
 
 ## 7. Divisão de papéis
-
-Todos codificam — papéis distribuem responsabilidade de acompanhamento, não exclusividade de execução. Cada papel tem uma pessoa sombra (backup). Em equipes de 4, coordenação acumula com outro papel; em equipes de 5–6, dados/pipeline e análise podem ser duplicados.
 
 | Papel | Titular | Sombra / Apoio |
 |---|---|---|
