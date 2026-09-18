@@ -51,8 +51,8 @@ A gerência da VISAT (Vigilância em Saúde do Trabalhador), responsável por de
 | Fonte                                                | Link                                                                                                             | Formato | Volume estimado               | Licença/acesso          | Amostra baixada e aberta? | Colunas-chave confirmadas na amostra |
 | ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------- | ----------------------------- | ----------------------- | ------------------------- | ------------------------------------ |
 | Comunicação de Acidente de Trabalho (CAT)            | https://dadosabertos.inss.gov.br/dataset/inss-comunicacao-de-acidente-de-trabalho-cat                            | CSV/ZIP | Nacional (recorte Recife)     | Pública e gratuita      | Sim                       | Agente Causador, Data Acidente, CBO, CID-10, CNAE 2.0, Município, Natureza da Lesão, Sexo |
-| Relação Anual de Informações Sociais (RAIS)          | https://basedosdados.org/dataset/3e7c4d58-96ba-448e-b053-d385a829ef00                                           | SQL/CSV | Nacional (recorte Recife)     | Pública e gratuita      | Não                       | CBO, CNAE, município, vínculos, sexo, idade |
-| Cadastro Geral de Empregados e Desempregados (CAGED) | https://basedosdados.org/dataset/562b56a3-0b01-4735-a049-eeac5681f056                                           | SQL/CSV | Nacional (recorte Recife)     | Pública e gratuita      | Não                       | CBO, CNAE, município, movimentação |
+| Relação Anual de Informações Sociais (RAIS)          | https://basedosdados.org/dataset/3e7c4d58-96ba-448e-b053-d385a829ef00                                           | SQL/CSV | Nacional (recorte Recife)     | Pública e gratuita      | Sim                       | CBO, CNAE, município, vínculos, sexo, idade |
+| Cadastro Geral de Empregados e Desempregados (CAGED) | https://basedosdados.org/dataset/562b56a3-0b01-4735-a049-eeac5681f056                                           | SQL/CSV | Nacional (recorte Recife)     | Pública e gratuita      | Sim                       | CBO, CNAE, município, movimentação |
 | SINAN (Doenças e Agravos de Notificação)             | https://datasus.saude.gov.br/acesso-a-informacao/doencas-e-agravos-de-notificacao-de-2007-em-diante-sinan/       | DBF/CSV | Nacional                      | Pública e gratuita      | Não                       | Notificações de agravos relacionados ao trabalho |
 | CBO (Classificação Brasileira de Ocupações)          | https://www.gov.br/trabalho-e-emprego/pt-br/assuntos/cbo                                                        | Excel/CSV | Pequeno                     | Pública e gratuita      | Sim                       | Código e nome da ocupação |
 | CONCLA / CNAE (Classificação Nacional de Atividades Econômicas) | https://concla.ibge.gov.br                                                                              | Excel/CSV | Pequeno                     | Pública e gratuita      | Sim                       | Código e nome da atividade econômica |
@@ -100,18 +100,18 @@ A gerência da VISAT (Vigilância em Saúde do Trabalhador), responsável por de
 
 | Papel | Titular | Sombra / Apoio |
 |---|---|---|
-| **Product Owner (PO)** | Lia Marinho | Lucas Pedro |
+| **Product Owner (PO)** |  Lucas Pedro | Lia Marinho |
 | **QA de Dados** | Gabriel Caminha | — |
 | **Engenharia de Dados** | Gabriel Araújo | Matheus |
 | **Modelagem e Banco de Dados** | Gabriel Araújo | Matheus |
 | **Análise de Dados** | Guilherme Santana| Guilherme Melo |
-| **Visualização de Dados** | Robertha Miranda | — |
+| **Visualização de Dados** | Robertha Miranda | Gabriel Caminha |
 | **Narrativa e Pitch** | Lia Marinho |  Robertha Miranda, Matheus |
 
 **Canal de comunicação da equipe (fora do horário de aula):**
 
 ```
-(grupo no WhatsApp)
+(grupo no WhatsApp: https://chat.whatsapp.com/IjXCaMyyh3YDV5yvutjb1w?s=cl&p=a&mlu=4&ilr=4)
 ```
 
 ---
@@ -120,7 +120,7 @@ A gerência da VISAT (Vigilância em Saúde do Trabalhador), responsável por de
 
 | | |
 |---|---|
-| **Status** | ( ) Aprovado ( ) Aprovado com ajustes ( ) Devolvido com pendências |
+| **Status** | (x) Aprovado ( ) Aprovado com ajustes ( ) Devolvido com pendências |
 | **Data** | |
 | **Amostra baixada e aberta verificada?** | ( ) Sim ( ) Não |
 | **Pendências (com prazo até o E3 — seg 21/09)** | |
