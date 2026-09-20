@@ -11,7 +11,7 @@ venv/
 # Dados locais gerados nos exercícios
 *.db
 *.sqlite
-dados_raw/
+dados/brutos/
 output/
 
 # SO / editor
