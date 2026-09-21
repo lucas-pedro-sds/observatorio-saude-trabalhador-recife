@@ -2,6 +2,7 @@ import argparse
 import importlib
 import os
 import sys
+import time
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
@@ -44,8 +45,30 @@ def carregar(nomes_tabelas, engine):
 
     for nome in nomes_tabelas:
         df = TABELAS[nome]()
-        df.to_sql(nome, engine, if_exists="append", index=False, chunksize=10000, method="multi")
+        _carregar_em_lotes(nome, df, engine)
         print(f"{nome}: {len(df)} linhas carregadas")
+
+
+def _carregar_em_lotes(nome, df, engine, tamanho_lote=100_000, tentativas=3):
+    """Insere em pedaços menores, cada um com seu próprio commit.
+
+    Necessário porque um to_sql() único para uma tabela de mais de 1 milhão de
+    linhas é UMA transação gigante — se a conexão cair no meio (aconteceu com o
+    Aiven, plano gratuito com recursos limitados), a transação inteira é desfeita
+    e todo o progresso se perde. Em lotes, só o lote atual precisa ser refeito.
+    """
+    total = len(df)
+    for inicio in range(0, total, tamanho_lote):
+        lote = df.iloc[inicio : inicio + tamanho_lote]
+        for tentativa in range(1, tentativas + 1):
+            try:
+                lote.to_sql(nome, engine, if_exists="append", index=False, chunksize=5000, method="multi")
+                break
+            except Exception as erro:
+                if tentativa == tentativas:
+                    raise
+                print(f"{nome}: falha no lote {inicio}-{inicio + len(lote)} (tentativa {tentativa}/{tentativas}): {erro}")
+                time.sleep(5)
 
 
 if __name__ == "__main__":
