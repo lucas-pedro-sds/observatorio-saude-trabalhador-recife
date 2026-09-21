@@ -131,5 +131,4 @@ para a coordenação.`
 
 ## Limitações conhecidas dos dados
 
-`[EQUIPE] preencher à medida que a amostra for explorada (nulos, encoding,
-granularidade geográfica, defasagem entre bases, etc.)`
+`Filtro geográfico da CAT usa município do empregador, não o local exato do acidente, pois a coluna está corrompida.O filtro de datas do RAIS e CAGED está entre 2023 e 2025, pois no rais não foram encontrados dados do RAIS e, em relação ao CAGED, somente dados pagos podem ser encontrados de 2026, com limite para fevereiro`
