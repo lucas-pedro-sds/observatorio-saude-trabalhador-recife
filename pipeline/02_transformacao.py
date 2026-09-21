@@ -68,3 +68,35 @@ def transformar_cnae():
     df["Denominação"] = df["Denominação"].ffill()
     df = df.rename(columns={"Seção": "secao", "Divisão": "divisao", "Grupo": "grupo", "Classe": "classe", "Denominação": "denominacao"})
     return df
+
+def transformar_caged():
+    """Estabelecimentos do CAGED em Recife, sem descrições redundantes.
+
+    Descarta cnae_1 (classificação antiga, sem tabela de dimensão no projeto) e todas
+    as colunas de descrição de cnae_2/cnae_2_subclasse — essas descrições já vêm de
+    transformar_cnae(), então mantê-las aqui só duplicaria texto em ~580 mil linhas.
+    """
+    colunas_codigo = ["cbo_2002", "cnae_2_secao", "cnae_2_subclasse"]
+    df = pd.read_csv(
+        "dados/brutos/caged/caged_recife_2023_2025.csv",
+        dtype={coluna: str for coluna in colunas_codigo},
+    )
+
+    colunas_descartadas = [
+        "sigla_uf",
+        "sigla_uf_nome",
+        "id_municipio_nome",
+        "cbo_2002_descricao",
+        "cbo_2002_descricao_familia",
+        "cbo_2002_descricao_subgrupo",
+        "cbo_2002_descricao_subgrupo_principal",
+        "cbo_2002_descricao_grande_grupo",
+        "cnae_2_subclasse_descricao_subclasse",
+        "cnae_2_subclasse_descricao_classe",
+        "cnae_2_subclasse_descricao_grupo",
+        "cnae_2_subclasse_descricao_divisao",
+        "cnae_2_subclasse_descricao_secao",
+    ]
+    df = df.drop(columns=colunas_descartadas)
+    return df
+    
