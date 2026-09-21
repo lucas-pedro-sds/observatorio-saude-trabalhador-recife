@@ -11,6 +11,13 @@ def transformar_cbo():
         dtype={"CODIGO": str},
     )
     df = df.rename(columns={"CODIGO": "cbo_2002", "TITULO": "cbo_2002_descricao"})
+
+    linha_nao_classificado = pd.DataFrame([{
+        "cbo_2002": "999999",
+        "cbo_2002_descricao": "Não classificado",
+    }])
+    df = pd.concat([df, linha_nao_classificado], ignore_index=True)
+
     return df
 
 
@@ -42,6 +49,7 @@ def transformar_rais():
         "cnae_2_subclasse_descricao_secao",
     ]
     df = df.drop(columns=colunas_descartadas)
+    df["cnae_2_classe"] = df["cnae_2_subclasse"].str[:5]
 
     return df
 
@@ -62,9 +70,13 @@ def transformar_cat():
     usado na RAIS/CAGED (INSS não usa o mesmo nível de detalhe) — não são diretamente
     comparáveis sem ajuste, documentado como limitação conhecida.
     """
-    df = pd.read_csv("dados/brutos/cat/cat_recife_unificado.csv")
+    df = pd.read_csv(
+        "dados/brutos/cat/cat_recife_unificado.csv",
+        dtype={"CBO": str, "CNAE2.0 Empregador": str},
+    )
 
     df["id_municipio"] = df["Munic Empr"].str.split("-").str[0].str.strip()
+    df["cnae"] = df["CNAE2.0 Empregador"].str.zfill(4)
 
     data_acidente = pd.to_datetime(df["Data Acidente"], format="%d/%m/%Y", errors="coerce")
     df["ano_acidente"] = data_acidente.dt.year
@@ -76,13 +88,28 @@ def transformar_cat():
     df = df.rename(columns={
         "CBO": "cbo_2002",
         "CID-10": "cid10",
-        "CNAE2.0 Empregador": "cnae",
+        "Agente  Causador  Acidente": "agente_causador_acidente",
+        "Emitente CAT": "emitente_cat",
+        "Espécie do benefício": "especie_beneficio",
+        "Filiação Segurado": "filiacao_segurado",
+        "Indica Óbito Acidente": "indica_obito_acidente",
+        "Natureza da Lesão": "natureza_lesao",
+        "Origem de Cadastramento CAT": "origem_cadastramento_cat",
+        "Parte Corpo Atingida": "parte_corpo_atingida",
+        "Sexo": "sexo",
+        "Tipo do Acidente": "tipo_acidente",
+        "UF Munic. Empregador": "uf_empregador",
+        "Data  Afastamento": "data_afastamento",
+        "Data Despacho Benefício": "data_despacho_beneficio",
+        "Data Emissão CAT": "data_emissao_cat",
+        "Tipo de Empregador": "tipo_empregador",
     })
 
     colunas_descartadas = [
         "UF  Munic.  Acidente",
         "CBO.1",
         "CID-10.1",
+        "CNAE2.0 Empregador",
         "CNAE2.0 Empregador.1",
         "Data Acidente",
         "Data Acidente.1",
@@ -97,26 +124,45 @@ def transformar_cat():
 
 
 def transformar_cnae():
-    """Estrutura hierárquica do CNAE 2.0 (Seção/Divisão/Grupo/Classe).
+    """Estrutura hierárquica do CNAE 2.0, já reduzida às linhas de Classe (nível
+    usado como chave de junção) e com dois códigos limpos (sem ponto/traço):
+
+    - classe_codigo (5 dígitos): chave para cnae_2_classe da RAIS/CAGED.
+    - classe_codigo_4 (4 dígitos, sem o dígito verificador): chave para o campo
+      "cnae" da CAT, que vem nessa granularidade menor (confirmado: prefixo único,
+      sem ambiguidade, em toda a tabela).
+
+    Inclui uma linha sintética "Não classificado" (código 99999/9999) para cobrir
+    o placeholder 9999999 que aparece na RAIS/CAGED sem Classe real correspondente.
     """
     df = pd.read_excel(
         "dados/brutos/cnae/CNAE20_EstruturaDetalhada.xls",
         sheet_name="Est. Detalhada CNAE 2.0",
-
     )
-    """ Foi encontrado um problema no dataframe, onde algumas linhas estavam com valores dos títulos das colunas 
-    "Seção", "Divisão" e "Grupo" vazios. Para resolver esse problema, utilizamos um filtro dentro do dataframe e exclusão dos valores.
-    Depois disso, resetamos os índices do dataframe para que eles fiquem sequenciais e consistentes. Em seguida, utilizamos o método ffill() para preencher os valores vazios das colunas "Seção", "Divisão" e "Grupo" com os valores anteriores, garantindo que cada linha tenha informações completas sobre a hierarquia do CNAE. 
-    Por fim, renomeamos as colunas para nomes mais amigáveis e retornamos o dataframe transformado.
-    """
 
-    df = df[df["Seção"] != 'Seção']  # Filtra as linhas onde a coluna "Seção" não é igual a 'Seção'
+    df = df[df["Seção"] != "Seção"]  # remove linhas de cabeçalho repetidas no meio do arquivo
     df = df.reset_index(drop=True)
     df["Seção"] = df["Seção"].ffill()
     df["Divisão"] = df["Divisão"].ffill()
     df["Grupo"] = df["Grupo"].ffill()
-    df["Denominação"] = df["Denominação"].ffill()
-    df = df.rename(columns={"Seção": "secao", "Divisão": "divisao", "Grupo": "grupo", "Classe": "classe", "Denominação": "denominacao"})
+
+    df["classe_codigo"] = df["Classe"].str.replace(".", "", regex=False).str.replace("-", "", regex=False)
+    df["classe_codigo_4"] = df["classe_codigo"].str[:4]
+
+    df = df.rename(columns={"Seção": "secao", "Divisão": "divisao", "Grupo": "grupo", "Denominação": "denominacao"})
+    df = df.dropna(subset=["classe_codigo"])  # mantém só as linhas de Classe (as demais já cumpriram seu papel no ffill)
+    df = df[["secao", "divisao", "grupo", "classe_codigo", "classe_codigo_4", "denominacao"]]
+
+    linha_nao_classificado = pd.DataFrame([{
+        "secao": None,
+        "divisao": None,
+        "grupo": None,
+        "classe_codigo": "99999",
+        "classe_codigo_4": "9999",
+        "denominacao": "Não classificado",
+    }])
+    df = pd.concat([df, linha_nao_classificado], ignore_index=True)
+
     return df
 
 def transformar_caged():
@@ -126,7 +172,7 @@ def transformar_caged():
     as colunas de descrição de cnae_2/cnae_2_subclasse — essas descrições já vêm de
     transformar_cnae(), então mantê-las aqui só duplicaria texto em ~580 mil linhas.
     """
-    colunas_codigo = ["cbo_2002", "cnae_2_secao", "cnae_2_subclasse"]
+    colunas_codigo = ["cbo_2002", "id_municipio", "cnae_2_secao", "cnae_2_subclasse"]
     df = pd.read_csv(
         "dados/brutos/caged/caged_recife_2023_2025.csv",
         dtype={coluna: str for coluna in colunas_codigo},
@@ -148,5 +194,5 @@ def transformar_caged():
         "cnae_2_subclasse_descricao_secao",
     ]
     df = df.drop(columns=colunas_descartadas)
+    df["cnae_2_classe"] = df["cnae_2_subclasse"].str[:5]
     return df
-    
