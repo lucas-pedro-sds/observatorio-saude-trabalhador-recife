@@ -1,6 +1,9 @@
 import os
 import argparse
+import glob
+
 import basedosdados as bd
+import pandas as pd
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -316,13 +319,58 @@ WHERE dados.sigla_uf = 'PE'
 
     return df
 
+
+def coletar_cat():
+    """Comunicações de Acidente de Trabalho (CAT) em Recife/PE, unificando os arquivos mensais.
+
+    A coluna "UF Munic. Acidente" vem corrompida na fonte (INSS, valores tipo
+    "{ class}" em boa parte das linhas), então o filtro geográfico usa "Munic Empr"
+    (município do empregador) como aproximação — ver limitação registrada no README.
+    Código 261160 = Recife (código IBGE truncado, sem o dígito verificador).
+    """
+    arquivos = sorted(glob.glob("dados/brutos/cat/D.SDA.PDA.005.CAT.*.csv"))
+    partes = [pd.read_csv(arquivo, sep=";", encoding="latin1") for arquivo in arquivos]
+    df = pd.concat(partes, ignore_index=True)
+    df = df[df["Munic Empr"].str.startswith("261160", na=False)]
+
+    destino = "dados/brutos/cat/cat_recife_unificado.csv"
+    df.to_csv(destino, index=False)
+
+    return df
+
+
+def carregar_cbo():
+    """Tabela de ocupações CBO 2002 (dimensão usada no join com CAGED)."""
+    return pd.read_csv(
+        "dados/brutos/cbo/ESTRUTURA CBO/CBO2002 - Ocupacao.csv",
+        sep=";",
+        encoding="latin1",
+    )
+
+
+def carregar_cnae():
+    """Estrutura hierárquica do CNAE 2.0 (Seção/Divisão/Grupo/Classe)."""
+    return pd.read_excel("dados/brutos/cnae/CNAE20_EstruturaDetalhada.xls")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Coleta os dados brutos do observatório")
-    parser.add_argument("fontes", nargs="*", choices=["rais", "caged"], help="fontes a coletar (padrão: todas)")
+    parser.add_argument(
+        "fontes",
+        nargs="*",
+        choices=["rais", "caged", "cat", "cbo", "cnae"],
+        help="fontes a coletar (padrão: todas)",
+    )
     args = parser.parse_args()
-    fontes = args.fontes or ["rais", "caged"]
+    fontes = args.fontes or ["rais", "caged", "cat", "cbo", "cnae"]
 
     if "rais" in fontes:
         coletar_rais()
     if "caged" in fontes:
         coletar_caged()
+    if "cat" in fontes:
+        coletar_cat()
+    if "cbo" in fontes:
+        carregar_cbo()
+    if "cnae" in fontes:
+        carregar_cnae()
