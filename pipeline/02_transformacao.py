@@ -14,6 +14,38 @@ def transformar_cbo():
     return df
 
 
+def transformar_rais():
+    """Estabelecimentos da RAIS em Recife, com tipos protegidos e sem descrições redundantes.
+
+    Descarta cnae_1 (classificação antiga, sem tabela de dimensão no projeto) e todas
+    as colunas de descrição de cnae_2/cnae_2_subclasse — essas descrições já vêm de
+    transformar_cnae(), então mantê-las aqui só duplicaria texto em ~580 mil linhas.
+    """
+    colunas_codigo = ["sigla_uf", "id_municipio", "cnae_2", "cnae_2_subclasse", "cep"]
+    df = pd.read_csv(
+        "dados/brutos/rais/rais_recife_2023_2025.csv",
+        dtype={coluna: str for coluna in colunas_codigo},
+    )
+
+    colunas_descartadas = [
+        "sigla_uf_nome",
+        "id_municipio_nome",
+        "cnae_1",
+        "cnae_1_descricao",
+        "cnae_1_descricao_grupo",
+        "cnae_1_descricao_divisao",
+        "cnae_1_descricao_secao",
+        "cnae_2_subclasse_descricao_subclasse",
+        "cnae_2_subclasse_descricao_classe",
+        "cnae_2_subclasse_descricao_grupo",
+        "cnae_2_subclasse_descricao_divisao",
+        "cnae_2_subclasse_descricao_secao",
+    ]
+    df = df.drop(columns=colunas_descartadas)
+
+    return df
+
+
 def transformar_cnae():
     """Estrutura hierárquica do CNAE 2.0 (Seção/Divisão/Grupo/Classe).
     """
@@ -30,9 +62,9 @@ def transformar_cnae():
 
     df = df[df["Seção"] != 'Seção']  # Filtra as linhas onde a coluna "Seção" não é igual a 'Seção'
     df = df.reset_index(drop=True)
-    df["Seção"] = df["Secao"].ffill()
-    df["Divisão"] = df["Divisao"].ffill()
+    df["Seção"] = df["Seção"].ffill()
+    df["Divisão"] = df["Divisão"].ffill()
     df["Grupo"] = df["Grupo"].ffill()
-    df["Denominação"] = df["Denominacao"].ffill()
-    df = df.rename(columns={"Seção": "secao", "Divisão": "divisao", "Grupo": "grupo", "Classe": "classe"})
+    df["Denominação"] = df["Denominação"].ffill()
+    df = df.rename(columns={"Seção": "secao", "Divisão": "divisao", "Grupo": "grupo", "Classe": "classe", "Denominação": "denominacao"})
     return df
