@@ -46,6 +46,56 @@ def transformar_rais():
     return df
 
 
+def transformar_cat():
+    """CAT unificada e filtrada para Recife, com campos sensíveis tratados.
+
+    Descarta: colunas corrompidas/duplicadas na fonte (UF Munic. Acidente,
+    CBO.1/CID-10.1/CNAE2.0 Empregador.1 — descrições truncadas, redundantes com as
+    tabelas de dimensão), Data Acidente.1/.2 (duplicatas exatas da própria fonte) e
+    CNPJ/CEI Empregador (identificador direto da empresa — não pode chegar ao banco
+    compartilhado com o time de análise).
+
+    Generaliza: Data Acidente -> ano_acidente/mes_acidente (descarta o dia);
+    Data Nascimento -> só ano_nascimento (corte mais forte, por ser mais identificável).
+
+    Nota: o código de "cnae" aqui vem em granularidade diferente do cnae_2_subclasse
+    usado na RAIS/CAGED (INSS não usa o mesmo nível de detalhe) — não são diretamente
+    comparáveis sem ajuste, documentado como limitação conhecida.
+    """
+    df = pd.read_csv("dados/brutos/cat/cat_recife_unificado.csv")
+
+    df["id_municipio"] = df["Munic Empr"].str.split("-").str[0].str.strip()
+
+    data_acidente = pd.to_datetime(df["Data Acidente"], format="%d/%m/%Y", errors="coerce")
+    df["ano_acidente"] = data_acidente.dt.year
+    df["mes_acidente"] = data_acidente.dt.month
+
+    data_nascimento = pd.to_datetime(df["Data Nascimento"], format="%d/%m/%Y", errors="coerce")
+    df["ano_nascimento"] = data_nascimento.dt.year
+
+    df = df.rename(columns={
+        "CBO": "cbo_2002",
+        "CID-10": "cid10",
+        "CNAE2.0 Empregador": "cnae",
+    })
+
+    colunas_descartadas = [
+        "UF  Munic.  Acidente",
+        "CBO.1",
+        "CID-10.1",
+        "CNAE2.0 Empregador.1",
+        "Data Acidente",
+        "Data Acidente.1",
+        "Data Acidente.2",
+        "Data Nascimento",
+        "Munic Empr",
+        "CNPJ/CEI Empregador",
+    ]
+    df = df.drop(columns=colunas_descartadas)
+
+    return df
+
+
 def transformar_cnae():
     """Estrutura hierárquica do CNAE 2.0 (Seção/Divisão/Grupo/Classe).
     """
