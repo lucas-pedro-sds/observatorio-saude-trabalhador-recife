@@ -27,6 +27,12 @@ def transformar_rais():
     Descarta cnae_1 (classificação antiga, sem tabela de dimensão no projeto) e todas
     as colunas de descrição de cnae_2/cnae_2_subclasse — essas descrições já vêm de
     transformar_cnae(), então mantê-las aqui só duplicaria texto em ~580 mil linhas.
+
+    Descarta também natureza_estabelecimento: o LEFT JOIN com o dicionário de tradução
+    na consulta SQL de coletar_rais() (01_coleta.py) nunca bateu nenhuma linha (100%
+    NULL nas 533 mil linhas) — provável descompasso de tipo na condição do JOIN no
+    BigQuery. Não fizemos parte da fatia mínima do canvas, então descartamos em vez
+    de reprocessar a coleta; fica documentado como limitação conhecida no README.
     """
     colunas_codigo = ["sigla_uf", "id_municipio", "cnae_2", "cnae_2_subclasse", "cep"]
     df = pd.read_csv(
@@ -37,6 +43,8 @@ def transformar_rais():
     colunas_descartadas = [
         "sigla_uf_nome",
         "id_municipio_nome",
+        "natureza_estabelecimento",
+        "subatividade_ibge",
         "cnae_1",
         "cnae_1_descricao",
         "cnae_1_descricao_grupo",
@@ -99,10 +107,15 @@ def transformar_cat():
         "Sexo": "sexo",
         "Tipo do Acidente": "tipo_acidente",
         "UF Munic. Empregador": "uf_empregador",
+        "Tipo de Empregador": "tipo_empregador",
+    })
+
+    for coluna_data in ["Data  Afastamento", "Data Despacho Benefício", "Data Emissão CAT"]:
+        df[coluna_data] = pd.to_datetime(df[coluna_data], format="%d/%m/%Y", errors="coerce")
+    df = df.rename(columns={
         "Data  Afastamento": "data_afastamento",
         "Data Despacho Benefício": "data_despacho_beneficio",
         "Data Emissão CAT": "data_emissao_cat",
-        "Tipo de Empregador": "tipo_empregador",
     })
 
     colunas_descartadas = [
@@ -170,7 +183,9 @@ def transformar_caged():
 
     Descarta cnae_1 (classificação antiga, sem tabela de dimensão no projeto) e todas
     as colunas de descrição de cnae_2/cnae_2_subclasse — essas descrições já vêm de
-    transformar_cnae(), então mantê-las aqui só duplicaria texto em ~580 mil linhas.
+    transformar_cnae(), então mantê-las aqui só duplicaria texto em ~1,2 milhão de linhas.
+
+    Descarta também origem_informacao: 100% NULL nesse recorte, sem informação real.
     """
     colunas_codigo = ["cbo_2002", "id_municipio", "cnae_2_secao", "cnae_2_subclasse"]
     df = pd.read_csv(
@@ -192,6 +207,7 @@ def transformar_caged():
         "cnae_2_subclasse_descricao_grupo",
         "cnae_2_subclasse_descricao_divisao",
         "cnae_2_subclasse_descricao_secao",
+        "origem_informacao",
     ]
     df = df.drop(columns=colunas_descartadas)
     df["cnae_2_classe"] = df["cnae_2_subclasse"].str[:5]

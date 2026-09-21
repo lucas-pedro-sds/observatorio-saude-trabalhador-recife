@@ -131,4 +131,10 @@ para a coordenação.`
 
 ## Limitações conhecidas dos dados
 
-`Filtro geográfico da CAT usa município do empregador, não o local exato do acidente, pois a coluna está corrompida.O filtro de datas do RAIS e CAGED está entre 2023 e 2025, pois no rais não foram encontrados dados do RAIS e, em relação ao CAGED, somente dados pagos podem ser encontrados de 2026, com limite para fevereiro`
+`Filtro geográfico da CAT usa município do empregador, não o local exato do acidente, pois a coluna está corrompida. O filtro de datas do RAIS e CAGED está entre 2023 e 2025, pois na RAIS não foram encontrados dados mais recentes e, em relação ao CAGED, somente dados pagos podem ser encontrados a partir de 2026, com limite até fevereiro.
+
+A coluna natureza_estabelecimento da RAIS foi descartada na transformação: o JOIN com o dicionário de tradução na consulta de coleta nunca bateu nenhuma linha (100% NULL), provavelmente por descompasso de tipo na condição do JOIN no BigQuery. Como não fazia parte da fatia mínima do canvas, optamos por descartar em vez de reprocessar a coleta. subatividade_ibge (RAIS) e origem_informacao (CAGED) também foram descartadas pelo mesmo motivo (100% NULL nesse recorte), mas sem indício de bug de JOIN — parecem campos não populados pela própria fonte para Recife/período filtrado.
+
+A CAT tem duas colunas de identificação sensíveis já tratadas na transformação: CNPJ/CEI Empregador foi descartado por completo (identificador direto da empresa), e as datas de acidente/nascimento foram generalizadas para ano/mês (acidente) e só ano (nascimento). Restam três datas administrativas exatas (Data Afastamento, Data Despacho Benefício, Data Emissão CAT) não generalizadas, mantidas por serem potencialmente úteis para análise de prazo/subnotificação — revisar com o time se isso precisar de tratamento adicional.
+
+O código de CNAE não tem a mesma granularidade entre fontes: RAIS/CAGED usam Subclasse (7 dígitos), a CAT usa um código de 4 dígitos (Classe sem o dígito verificador). A dim_cnae guarda ambas as chaves (classe_codigo de 5 dígitos e classe_codigo_4) para permitir o JOIN de cada fonte no nível certo.
