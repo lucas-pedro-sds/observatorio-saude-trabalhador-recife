@@ -153,11 +153,24 @@ def transformar_cnae():
         sheet_name="Est. Detalhada CNAE 2.0",
     )
 
-    df = df[df["Seção"] != "Seção"]  # remove linhas de cabeçalho repetidas no meio do arquivo
+    # O arquivo bruto tem dois tipos de linha-lixo repetidos periodicamente (herança de
+    # exportação paginada): (1) cabeçalho repetido, onde Grupo == "Grupo" literalmente;
+    # (2) título repetido ("2.2 - Estrutura detalhada..."), onde só Seção tem texto e
+    # Divisão/Grupo/Classe/Denominação ficam NaN. Se não remover as duas ANTES do
+    # ffill, o texto do tipo (2) vaza via ffill para as linhas de Classe reais logo
+    # abaixo dele, corrompendo a coluna secao silenciosamente.
+    df = df[df["Grupo"] != "Grupo"]
+    df = df[df["Denominação"].notna() | df["Seção"].isna()]
     df = df.reset_index(drop=True)
     df["Seção"] = df["Seção"].ffill()
     df["Divisão"] = df["Divisão"].ffill()
     df["Grupo"] = df["Grupo"].ffill()
+
+    # Divisão vem com tipo inconsistente no Excel bruto (algumas células como texto,
+    # outras como número) e Grupo vem com ponto ("01.1") — normaliza os dois pra texto
+    # limpo, do mesmo jeito que já fazemos com a Classe.
+    df["Divisão"] = df["Divisão"].apply(lambda v: str(v).zfill(2) if pd.notna(v) else v)
+    df["Grupo"] = df["Grupo"].apply(lambda v: v.replace(".", "") if pd.notna(v) else v)
 
     df["classe_codigo"] = df["Classe"].str.replace(".", "", regex=False).str.replace("-", "", regex=False)
     df["classe_codigo_4"] = df["classe_codigo"].str[:4]
