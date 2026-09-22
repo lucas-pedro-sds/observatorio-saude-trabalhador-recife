@@ -20,7 +20,8 @@ TABELAS = {
     "fato_rais": transformacao.transformar_rais,
     "fato_caged": transformacao.transformar_caged,
     "fato_cat": transformacao.transformar_cat,
-    "fato_sinan": transformacao.transformar_sinan,
+    "fato_sinan_acgr": transformacao.transformar_sinan_acgr,
+    "fato_sinan_acbi": transformacao.transformar_sinan_acbi,
 }
 
 

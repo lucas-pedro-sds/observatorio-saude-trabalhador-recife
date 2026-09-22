@@ -364,20 +364,14 @@ def coletar_cid10():
     return df
 
 
-def coletar_sinan():
-    """Notificações de Acidente de Trabalho (SINAN/ACGR) em Recife, 2023-2025.
+def _baixar_grupo_sinan(grupo, anos):
+    """Baixa e converte arquivos PRELIM do SINAN para um grupo/anos dados.
 
     A função de conveniência do pysus (sinan()) está retornando vazio nessa versão
     (confirmado: bug/config da biblioteca, não ausência de dado — os arquivos existem
     no FTP do DATASUS). Contorna baixando via ftplib direto e convertendo com
-    pyreaddbc, dependência que o próprio pysus já traz.
-
-    Arquivos são nacionais (ACGRBR<ano>.dbc, não por estado) — baixamos e filtramos
-    Recife localmente. 2023-2025 só existem como PRELIM (dado preliminar, ainda não
-    consolidado pelo Ministério da Saúde) — ver limitação no README.
-
-    Filtra por MUN_ACID (local real do acidente), não ID_MUNICIP (local da
-    notificação, que infla o número por Recife ser polo regional de saúde).
+    pyreaddbc, dependência que o próprio pysus já traz. Arquivos são nacionais
+    (<GRUPO>BR<ano>.dbc, não por estado) — filtragem geográfica é feita por quem chama.
     """
     import ftplib
 
@@ -387,12 +381,11 @@ def coletar_sinan():
     pasta = "dados/brutos/sinan"
     os.makedirs(pasta, exist_ok=True)
 
-    anos = ["23", "24", "25"]
     partes = []
     ftp = ftplib.FTP("ftp.datasus.gov.br", timeout=60)
     ftp.login()
     for ano in anos:
-        nome = f"ACGRBR{ano}"
+        nome = f"{grupo}BR{ano}"
         caminho_dbc = f"{pasta}/{nome}.dbc"
         caminho_dbf = f"{pasta}/{nome}.dbf"
         with open(caminho_dbc, "wb") as arquivo:
@@ -402,10 +395,44 @@ def coletar_sinan():
         partes.append(pd.DataFrame(iter(tabela)))
     ftp.quit()
 
-    df = pd.concat(partes, ignore_index=True)
+    return pd.concat(partes, ignore_index=True)
+
+
+def coletar_sinan_acgr():
+    """Notificações de Acidente de Trabalho geral (SINAN/ACGR) em Recife, 2023-2025.
+
+    2023-2025 só existem como PRELIM (dado preliminar, ainda não consolidado pelo
+    Ministério da Saúde) — ver limitação no README.
+
+    Filtra por MUN_ACID (local real do acidente), não ID_MUNICIP (local da
+    notificação, que infla o número por Recife ser polo regional de saúde).
+    """
+    df = _baixar_grupo_sinan("ACGR", ["23", "24", "25"])
     df = df[df["MUN_ACID"].astype(str) == "261160"]
 
-    destino = f"{pasta}/sinan_acgr_recife_2023_2025.csv"
+    destino = "dados/brutos/sinan/sinan_acgr_recife_2023_2025.csv"
+    df.to_csv(destino, index=False)
+
+    return df
+
+
+def coletar_sinan_acbi():
+    """Notificações de Acidente com Material Biológico (SINAN/ACBI) em Recife, 2023-2025.
+
+    Formulário diferente do ACGR (68 colunas, focado em protocolo de biossegurança —
+    tipo de exposição, EPI usado, esquema vacinal — não em diagnóstico CID). Mesma
+    limitação de dado PRELIM que o ACGR.
+
+    Não existe MUN_ACID nesse formulário (só faz sentido para acidente geral, não
+    exposição biológica). Filtra por MUN_EMP (município do empregador) como proxy do
+    local do acidente — mesma lógica já usada na CAT, e pelo mesmo motivo: é a melhor
+    aproximação disponível, não o local exato. ID_MUNICIP (notificação) infla o número
+    por Recife ser polo regional de saúde (2.347 vs. 1.706 em teste com 2023).
+    """
+    df = _baixar_grupo_sinan("ACBI", ["23", "24", "25"])
+    df = df[df["MUN_EMP"].astype(str) == "261160"]
+
+    destino = "dados/brutos/sinan/sinan_acbi_recife_2023_2025.csv"
     df.to_csv(destino, index=False)
 
     return df
@@ -430,11 +457,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "fontes",
         nargs="*",
-        choices=["rais", "caged", "cat", "cbo", "cnae", "cid10", "sinan"],
+        choices=["rais", "caged", "cat", "cbo", "cnae", "cid10", "sinan_acgr", "sinan_acbi"],
         help="fontes a coletar (padrão: todas)",
     )
     args = parser.parse_args()
-    fontes = args.fontes or ["rais", "caged", "cat", "cbo", "cnae", "cid10", "sinan"]
+    fontes = args.fontes or ["rais", "caged", "cat", "cbo", "cnae", "cid10", "sinan_acgr", "sinan_acbi"]
 
     if "rais" in fontes:
         coletar_rais()
@@ -448,5 +475,7 @@ if __name__ == "__main__":
         carregar_cnae()
     if "cid10" in fontes:
         coletar_cid10()
-    if "sinan" in fontes:
-        coletar_sinan()
+    if "sinan_acgr" in fontes:
+        coletar_sinan_acgr()
+    if "sinan_acbi" in fontes:
+        coletar_sinan_acbi()

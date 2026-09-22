@@ -198,7 +198,7 @@ def transformar_cid10():
     return pd.read_csv("dados/brutos/cid10/cid10.csv", dtype={"subcategoria": str, "categoria": str})
 
 
-def transformar_sinan():
+def transformar_sinan_acgr():
     """Notificações de Acidente de Trabalho (SINAN/ACGR) em Recife, 2023-2025.
 
     Protege como texto os códigos que podem ter zero à esquerda ou letras
@@ -230,6 +230,36 @@ def transformar_sinan():
     df["cid_lesao"] = df["cid_lesao"].str.rstrip(".")
 
     for coluna_data in ["dt_notific", "dt_acid", "dt_atende", "dt_obito"]:
+        df[coluna_data] = pd.to_datetime(df[coluna_data], errors="coerce")
+
+    return df
+
+
+def transformar_sinan_acbi():
+    """Notificações de Acidente com Material Biológico (SINAN/ACBI) em Recife, 2023-2025.
+
+    Formulário diferente do ACGR — sem CID-10, focado em protocolo de biossegurança
+    (tipo de exposição, EPI usado, esquema vacinal). Descarta EVO_OUTR e DT_OBITO:
+    100% vazias nesse recorte (mesmo padrão de outras fontes — sem indício de bug,
+    parecem campos não populados pela fonte para Recife/período filtrado).
+
+    2023-2025 são dados PRELIM (preliminares, não consolidados pelo Ministério da
+    Saúde) — ver limitação no README.
+    """
+    colunas_codigo = [
+        "ID_MUNICIP", "ID_REGIONA", "ID_UNIDADE", "SG_UF_NOT", "ID_MN_RESI",
+        "ID_RG_RESI", "ID_PAIS", "ID_OCUPA_N", "CNAE", "UF_EMP", "MUN_EMP",
+        "TIPO_ACID", "CAT",
+    ]
+    df = pd.read_csv(
+        "dados/brutos/sinan/sinan_acbi_recife_2023_2025.csv",
+        dtype={coluna: str for coluna in colunas_codigo},
+    )
+    df.columns = df.columns.str.lower()
+
+    df = df.drop(columns=["evo_outr", "dt_obito"])
+
+    for coluna_data in ["dt_notific", "dt_acid"]:
         df[coluna_data] = pd.to_datetime(df[coluna_data], errors="coerce")
 
     return df

@@ -158,9 +158,13 @@ CREATE INDEX idx_fato_cat_data_acidente ON fato_cat (data_acidente);
 -- id_ocupa_n (CBO) também não têm FK: granularidade e formato ainda não conferidos
 -- contra dim_cnae/dim_cbo — fica para quando houver necessidade real de JOIN.
 --
--- Mantém todas as colunas da fonte (54, ver transformar_sinan() em 02_transformacao.py)
+-- Mantém todas as colunas da fonte (54, ver transformar_sinan_acgr() em 02_transformacao.py)
 -- sem descartar nenhuma — não é óbvio ainda quais o time de análise vai usar.
-CREATE TABLE fato_sinan (
+--
+-- Existe também fato_sinan_acbi (grupo ACBI, acidente com material biológico) como
+-- tabela separada, não unificada aqui: formulário bem diferente (foco em protocolo de
+-- biossegurança, sem CID-10, sem MUN_ACID) — decisão do time em 22/09/2026.
+CREATE TABLE fato_sinan_acgr (
     id BIGSERIAL PRIMARY KEY,
     tp_not INTEGER,
     id_agravo VARCHAR(3),
@@ -218,6 +222,86 @@ CREATE TABLE fato_sinan (
     cat VARCHAR(1)
 );
 
-CREATE INDEX idx_fato_sinan_dt_acid ON fato_sinan (dt_acid);
-CREATE INDEX idx_fato_sinan_mun_acid ON fato_sinan (mun_acid);
-CREATE INDEX idx_fato_sinan_cid_acid ON fato_sinan (cid_acid);
+CREATE INDEX idx_fato_sinan_acgr_dt_acid ON fato_sinan_acgr (dt_acid);
+CREATE INDEX idx_fato_sinan_acgr_mun_acid ON fato_sinan_acgr (mun_acid);
+CREATE INDEX idx_fato_sinan_acgr_cid_acid ON fato_sinan_acgr (cid_acid);
+
+-- Notificações de Acidente com Material Biológico do SINAN (grupo ACBI) em Recife,
+-- 2023-2025. Formulário diferente do ACGR: sem CID-10, focado em protocolo de
+-- biossegurança (tipo de exposição, EPI usado, esquema vacinal). Dados PRELIM.
+--
+-- Não existe MUN_ACID nesse formulário — filtra por mun_emp (município do
+-- empregador) como proxy do local do acidente, mesma lógica da CAT (melhor
+-- aproximação disponível, não o local exato).
+CREATE TABLE fato_sinan_acbi (
+    id BIGSERIAL PRIMARY KEY,
+    tp_not INTEGER,
+    id_agravo VARCHAR(4),
+    dt_notific DATE,
+    sem_not INTEGER,
+    nu_ano INTEGER,
+    sg_uf_not VARCHAR(2),
+    id_municip VARCHAR(6),
+    id_regiona VARCHAR(4),
+    id_unidade VARCHAR(7),
+    dt_acid DATE,
+    sem_acid INTEGER,
+    ano_nasc SMALLINT,
+    nu_idade_n INTEGER,
+    cs_sexo VARCHAR(1),
+    cs_gestant INTEGER,
+    cs_raca INTEGER,
+    cs_escol_n SMALLINT,
+    sg_uf INTEGER,
+    id_mn_resi VARCHAR(6),
+    id_rg_resi VARCHAR(4),
+    id_pais VARCHAR(1),
+    id_ocupa_n VARCHAR(6),
+    sit_trab SMALLINT,
+    nutempo INTEGER,
+    tptempo SMALLINT,
+    cnae VARCHAR(5),
+    uf_emp VARCHAR(2),
+    mun_emp VARCHAR(6),
+    terceiriza SMALLINT,
+    percutanea SMALLINT,
+    pele_integ SMALLINT,
+    pele_nao_i SMALLINT,
+    outro_exp SMALLINT,
+    out_exp_de TEXT,
+    mat_org SMALLINT,
+    mat_org_de TEXT,
+    tipo_acid VARCHAR(2),
+    agente SMALLINT,
+    luva SMALLINT,
+    avental SMALLINT,
+    oculos SMALLINT,
+    mascara SMALLINT,
+    facial SMALLINT,
+    bota SMALLINT,
+    vacina SMALLINT,
+    anti_hiv SMALLINT,
+    hbsag SMALLINT,
+    anti_hbs SMALLINT,
+    anti_hcv SMALLINT,
+    fonte SMALLINT,
+    fo_hbsag SMALLINT,
+    fo_ant_hiv SMALLINT,
+    fo_ant_hbc SMALLINT,
+    fo_ant_hcv SMALLINT,
+    sem_quimio SMALLINT,
+    recusa_qui SMALLINT,
+    azt3tc SMALLINT,
+    azt3tc_ind SMALLINT,
+    azt3tc_nfv SMALLINT,
+    imu_hep_b SMALLINT,
+    vac_hep_b SMALLINT,
+    outro_arv SMALLINT,
+    out_arv_es TEXT,
+    evolucao SMALLINT,
+    cat VARCHAR(1),
+    mucosa SMALLINT
+);
+
+CREATE INDEX idx_fato_sinan_acbi_dt_acid ON fato_sinan_acbi (dt_acid);
+CREATE INDEX idx_fato_sinan_acbi_mun_emp ON fato_sinan_acbi (mun_emp);
