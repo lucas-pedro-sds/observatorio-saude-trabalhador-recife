@@ -71,8 +71,12 @@ def transformar_cat():
     CNPJ/CEI Empregador (identificador direto da empresa — não pode chegar ao banco
     compartilhado com o time de análise).
 
-    Generaliza: Data Acidente -> ano_acidente/mes_acidente (descarta o dia);
-    Data Nascimento -> só ano_nascimento (corte mais forte, por ser mais identificável).
+    Data Acidente é mantida exata (data_acidente) — decisão do time em reunião de
+    21/09/2026, revertendo a generalização anterior (ano/mês) para permitir análise
+    por dia. Ciente do trade-off de privacidade já discutido (data + sexo + CNAE
+    podem reidentificar em empresas pequenas); ver README para o registro completo.
+    Data Nascimento continua generalizada para só ano_nascimento (não foi solicitado
+    reverter essa, e é o campo mais identificável dos dois).
 
     Nota: o código de "cnae" aqui vem em granularidade diferente do cnae_2_subclasse
     usado na RAIS/CAGED (INSS não usa o mesmo nível de detalhe) — não são diretamente
@@ -86,9 +90,7 @@ def transformar_cat():
     df["id_municipio"] = df["Munic Empr"].str.split("-").str[0].str.strip()
     df["cnae"] = df["CNAE2.0 Empregador"].str.zfill(4)
 
-    data_acidente = pd.to_datetime(df["Data Acidente"], format="%d/%m/%Y", errors="coerce")
-    df["ano_acidente"] = data_acidente.dt.year
-    df["mes_acidente"] = data_acidente.dt.month
+    df["data_acidente"] = pd.to_datetime(df["Data Acidente"], format="%d/%m/%Y", errors="coerce")
 
     data_nascimento = pd.to_datetime(df["Data Nascimento"], format="%d/%m/%Y", errors="coerce")
     df["ano_nascimento"] = data_nascimento.dt.year
@@ -190,6 +192,48 @@ def transformar_cnae():
     df = pd.concat([df, linha_nao_classificado], ignore_index=True)
 
     return df
+
+def transformar_cid10():
+    """Tabela de referência CID-10 (subcategoria = chave de junção, 4 caracteres)."""
+    return pd.read_csv("dados/brutos/cid10/cid10.csv", dtype={"subcategoria": str, "categoria": str})
+
+
+def transformar_sinan():
+    """Notificações de Acidente de Trabalho (SINAN/ACGR) em Recife, 2023-2025.
+
+    Protege como texto os códigos que podem ter zero à esquerda ou letras
+    (municípios, CNAE, CID-10). Mantém todas as colunas originais (renomeadas para
+    minúsculo) — a fonte tem 54 campos e não é óbvio quais o time de análise vai
+    usar; a decisão de descartar alguma fica para quando houver uma pergunta
+    analítica concreta que não precise dela.
+
+    2023-2025 são dados PRELIM (preliminares, não consolidados pelo Ministério da
+    Saúde) — ver limitação no README.
+    """
+    colunas_codigo = [
+        "ID_MUNICIP", "ID_REGIONA", "ID_UNIDADE", "SG_UF_NOT", "ID_MN_RESI",
+        "ID_RG_RESI", "ID_PAIS", "ID_OCUPA_N", "CNAE", "UF_EMP", "MUN_EMP",
+        "CNAE_PRIN", "UF_ACID", "MUN_ACID", "CID_ACID", "TIPO_ACID", "UF_ATENDE",
+        "MUN_ATENDE", "UNI_ATENDE", "CID_LESAO", "CAT",
+    ]
+    df = pd.read_csv(
+        "dados/brutos/sinan/sinan_acgr_recife_2023_2025.csv",
+        dtype={coluna: str for coluna in colunas_codigo},
+    )
+    df.columns = df.columns.str.lower()
+
+    # CID_ACID/CID_LESAO vêm com "." no lugar do 4º caractere quando o código é só de
+    # categoria (3 caracteres, ex: "V89."), não subcategoria (4 caracteres, "A000").
+    # Sem isso, nenhuma junção com dim_cid10 bateria para esses casos (confirmado:
+    # ~24% das notificações usam código de categoria, não subcategoria).
+    df["cid_acid"] = df["cid_acid"].str.rstrip(".")
+    df["cid_lesao"] = df["cid_lesao"].str.rstrip(".")
+
+    for coluna_data in ["dt_notific", "dt_acid", "dt_atende", "dt_obito"]:
+        df[coluna_data] = pd.to_datetime(df[coluna_data], errors="coerce")
+
+    return df
+
 
 def transformar_caged():
     """Estabelecimentos do CAGED em Recife, sem descrições redundantes.

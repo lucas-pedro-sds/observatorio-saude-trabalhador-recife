@@ -339,6 +339,78 @@ def coletar_cat():
     return df
 
 
+def coletar_cid10():
+    """Tabela de referência do CID-10 (código de subcategoria/categoria + descrições).
+
+    Não tem filtro geográfico — é uma classificação internacional, não específica
+    de Recife. Vem do mesmo diretório do basedosdados usado para CNAE/CBO.
+    """
+    query = """
+    SELECT
+      subcategoria,
+      descricao_subcategoria,
+      categoria,
+      descricao_categoria,
+      capitulo,
+      descricao_capitulo
+    FROM `basedosdados.br_bd_diretorios_brasil.cid_10`
+    """
+    df = bd.read_sql(query, billing_project_id=BILLING_PROJECT_ID)
+
+    destino = "dados/brutos/cid10/cid10.csv"
+    os.makedirs(os.path.dirname(destino), exist_ok=True)
+    df.to_csv(destino, index=False)
+
+    return df
+
+
+def coletar_sinan():
+    """Notificações de Acidente de Trabalho (SINAN/ACGR) em Recife, 2023-2025.
+
+    A função de conveniência do pysus (sinan()) está retornando vazio nessa versão
+    (confirmado: bug/config da biblioteca, não ausência de dado — os arquivos existem
+    no FTP do DATASUS). Contorna baixando via ftplib direto e convertendo com
+    pyreaddbc, dependência que o próprio pysus já traz.
+
+    Arquivos são nacionais (ACGRBR<ano>.dbc, não por estado) — baixamos e filtramos
+    Recife localmente. 2023-2025 só existem como PRELIM (dado preliminar, ainda não
+    consolidado pelo Ministério da Saúde) — ver limitação no README.
+
+    Filtra por MUN_ACID (local real do acidente), não ID_MUNICIP (local da
+    notificação, que infla o número por Recife ser polo regional de saúde).
+    """
+    import ftplib
+
+    import pyreaddbc
+    from dbfread import DBF
+
+    pasta = "dados/brutos/sinan"
+    os.makedirs(pasta, exist_ok=True)
+
+    anos = ["23", "24", "25"]
+    partes = []
+    ftp = ftplib.FTP("ftp.datasus.gov.br", timeout=60)
+    ftp.login()
+    for ano in anos:
+        nome = f"ACGRBR{ano}"
+        caminho_dbc = f"{pasta}/{nome}.dbc"
+        caminho_dbf = f"{pasta}/{nome}.dbf"
+        with open(caminho_dbc, "wb") as arquivo:
+            ftp.retrbinary(f"RETR /dissemin/publicos/SINAN/DADOS/PRELIM/{nome}.dbc", arquivo.write)
+        pyreaddbc.dbc2dbf(caminho_dbc, caminho_dbf)
+        tabela = DBF(caminho_dbf, encoding="latin1")
+        partes.append(pd.DataFrame(iter(tabela)))
+    ftp.quit()
+
+    df = pd.concat(partes, ignore_index=True)
+    df = df[df["MUN_ACID"].astype(str) == "261160"]
+
+    destino = f"{pasta}/sinan_acgr_recife_2023_2025.csv"
+    df.to_csv(destino, index=False)
+
+    return df
+
+
 def carregar_cbo():
     """Tabela de ocupações CBO 2002 (dimensão usada no join com CAGED)."""
     return pd.read_csv(
@@ -358,11 +430,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "fontes",
         nargs="*",
-        choices=["rais", "caged", "cat", "cbo", "cnae"],
+        choices=["rais", "caged", "cat", "cbo", "cnae", "cid10", "sinan"],
         help="fontes a coletar (padrão: todas)",
     )
     args = parser.parse_args()
-    fontes = args.fontes or ["rais", "caged", "cat", "cbo", "cnae"]
+    fontes = args.fontes or ["rais", "caged", "cat", "cbo", "cnae", "cid10", "sinan"]
 
     if "rais" in fontes:
         coletar_rais()
@@ -374,3 +446,7 @@ if __name__ == "__main__":
         carregar_cbo()
     if "cnae" in fontes:
         carregar_cnae()
+    if "cid10" in fontes:
+        coletar_cid10()
+    if "sinan" in fontes:
+        coletar_sinan()

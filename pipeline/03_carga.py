@@ -16,9 +16,11 @@ load_dotenv()
 TABELAS = {
     "dim_cbo": transformacao.transformar_cbo,
     "dim_cnae": transformacao.transformar_cnae,
+    "dim_cid10": transformacao.transformar_cid10,
     "fato_rais": transformacao.transformar_rais,
     "fato_caged": transformacao.transformar_caged,
     "fato_cat": transformacao.transformar_cat,
+    "fato_sinan": transformacao.transformar_sinan,
 }
 
 

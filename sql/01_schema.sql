@@ -22,6 +22,20 @@ CREATE TABLE dim_cnae (
     denominacao TEXT NOT NULL
 );
 
+-- Sem FK direta de cid_acid/cid_lesao (fato_sinan) para cá: um código pode ser de
+-- categoria (3 caracteres) ou subcategoria (4 caracteres) — uma FK só cobre uma
+-- coluna. Quem consultar faz LEFT JOIN em categoria OU subcategoria.
+CREATE TABLE dim_cid10 (
+    subcategoria VARCHAR(4) PRIMARY KEY,
+    descricao_subcategoria TEXT,
+    categoria VARCHAR(3) NOT NULL,
+    descricao_categoria TEXT,
+    capitulo VARCHAR(5),
+    descricao_capitulo TEXT
+);
+
+CREATE INDEX idx_dim_cid10_categoria ON dim_cid10 (categoria);
+
 -- ============================================================
 -- FATOS
 -- ============================================================
@@ -93,9 +107,11 @@ CREATE INDEX idx_fato_caged_ano_mes ON fato_caged (ano, mes);
 -- Comunicações de Acidente de Trabalho (CAT) em Recife (2023-2025). Uma linha por CAT.
 --
 -- Campos sensíveis já tratados na transformação (ver 02_transformacao.py e README):
--- CNPJ/CEI do empregador foi descartado; datas de acidente e nascimento foram
--- generalizadas para ano/mês e ano, respectivamente. As datas administrativas
--- restantes (afastamento, despacho de benefício, emissão do CAT) permanecem exatas.
+-- CNPJ/CEI do empregador foi descartado. Data de nascimento segue generalizada para
+-- só o ano (ano_nascimento). Data do acidente é exata (data_acidente) por decisão do
+-- time em 21/09/2026, revertendo a generalização anterior — ver README para o
+-- trade-off de privacidade envolvido. As datas administrativas (afastamento, despacho
+-- de benefício, emissão do CAT) também são exatas.
 --
 -- id_municipio aqui tem 6 dígitos (sem o dígito verificador), diferente dos 7 dígitos
 -- da RAIS/CAGED — mesma fonte (INSS), formato diferente, documentado como limitação.
@@ -104,8 +120,7 @@ CREATE INDEX idx_fato_caged_ano_mes ON fato_caged (ano, mes);
 -- ainda (fica para quando a base de CID-10 for incorporada).
 CREATE TABLE fato_cat (
     id BIGSERIAL PRIMARY KEY,
-    ano_acidente SMALLINT NOT NULL,
-    mes_acidente SMALLINT NOT NULL,
+    data_acidente DATE NOT NULL,
     ano_nascimento SMALLINT,
     id_municipio VARCHAR(6) NOT NULL,
     cbo_2002 VARCHAR(6),
@@ -129,4 +144,80 @@ CREATE TABLE fato_cat (
 );
 
 CREATE INDEX idx_fato_cat_cnae ON fato_cat (cnae);
-CREATE INDEX idx_fato_cat_ano_mes_acidente ON fato_cat (ano_acidente, mes_acidente);
+CREATE INDEX idx_fato_cat_data_acidente ON fato_cat (data_acidente);
+
+-- Notificações de Acidente de Trabalho do SINAN (grupo ACGR) em Recife, 2023-2025.
+-- Uma linha por notificação. Dados PRELIM (preliminares, ainda não consolidados pelo
+-- Ministério da Saúde) — ver "Limitações conhecidas dos dados" no README.
+--
+-- mun_acid é o município de onde o acidente aconteceu de verdade (diferente de
+-- id_municip, que é o município de notificação — mais impreciso, pois Recife é polo
+-- regional de saúde e recebe notificação de gente de outras cidades).
+--
+-- cid_acid/cid_lesao não têm FK (ver comentário em dim_cid10). cnae/cnae_prin/
+-- id_ocupa_n (CBO) também não têm FK: granularidade e formato ainda não conferidos
+-- contra dim_cnae/dim_cbo — fica para quando houver necessidade real de JOIN.
+--
+-- Mantém todas as colunas da fonte (54, ver transformar_sinan() em 02_transformacao.py)
+-- sem descartar nenhuma — não é óbvio ainda quais o time de análise vai usar.
+CREATE TABLE fato_sinan (
+    id BIGSERIAL PRIMARY KEY,
+    tp_not INTEGER,
+    id_agravo VARCHAR(3),
+    dt_notific DATE,
+    sem_not INTEGER,
+    nu_ano INTEGER,
+    sg_uf_not VARCHAR(2),
+    id_municip VARCHAR(6),
+    id_regiona VARCHAR(4),
+    id_unidade VARCHAR(7),
+    dt_acid DATE,
+    sem_acid INTEGER,
+    ano_nasc SMALLINT,
+    nu_idade_n INTEGER,
+    cs_sexo VARCHAR(1),
+    cs_gestant INTEGER,
+    cs_raca SMALLINT,
+    cs_escol_n SMALLINT,
+    sg_uf INTEGER,
+    id_mn_resi VARCHAR(6),
+    id_rg_resi VARCHAR(4),
+    id_pais VARCHAR(1),
+    id_ocupa_n VARCHAR(6),
+    sit_trab SMALLINT,
+    nutempo INTEGER,
+    tptempo SMALLINT,
+    local_acid INTEGER,
+    cnae VARCHAR(5),
+    uf_emp VARCHAR(2),
+    mun_emp VARCHAR(6),
+    terceiriza SMALLINT,
+    cnae_prin VARCHAR(5),
+    hora_acid SMALLINT,
+    min_acid SMALLINT,
+    hora_jor SMALLINT,
+    min_jor SMALLINT,
+    uf_acid VARCHAR(2),
+    mun_acid VARCHAR(6),
+    cid_acid VARCHAR(4),
+    tipo_acid VARCHAR(1),
+    mais_trab SMALLINT,
+    nu_trab INTEGER,
+    atende_med SMALLINT,
+    dt_atende DATE,
+    uf_atende VARCHAR(2),
+    mun_atende VARCHAR(6),
+    uni_atende VARCHAR(7),
+    part_corp1 INTEGER,
+    part_corp2 SMALLINT,
+    part_corp3 SMALLINT,
+    cid_lesao VARCHAR(4),
+    regime SMALLINT,
+    evolucao SMALLINT,
+    dt_obito DATE,
+    cat VARCHAR(1)
+);
+
+CREATE INDEX idx_fato_sinan_dt_acid ON fato_sinan (dt_acid);
+CREATE INDEX idx_fato_sinan_mun_acid ON fato_sinan (mun_acid);
+CREATE INDEX idx_fato_sinan_cid_acid ON fato_sinan (cid_acid);
