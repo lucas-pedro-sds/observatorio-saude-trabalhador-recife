@@ -12,6 +12,11 @@ xlrd>=2.0.1
 unidecode>=1.3
 basedosdados>=2.0
 pysus>=2.11.2
+# dbfread/pyreaddbc já vêm como dependência do pysus, mas listamos aqui porque
+# pipeline/01_coleta.py os importa diretamente (coletar_sinan_acgr/acbi) — não
+# queremos depender de um detalhe de implementação do pysus que pode mudar.
+dbfread>=2.0.7
+pyreaddbc>=2.0.4
 # pysus declara loguru<0.7, mas isso conflita com basedosdados (exige >=0.7). Testado:
 # loguru>=0.7 funciona bem com os dois pacotes, apesar do aviso do pip ao instalar.
 loguru>=0.7.0

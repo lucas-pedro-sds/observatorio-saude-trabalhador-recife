@@ -52,7 +52,7 @@ exemplo). Sugestão de estrutura por tabela — copiar para cada uma:
 
 ### 1. Pré-requisitos
 
-- Python 3.11+
+- **Python 3.11** especificamente (no Windows). Não use 3.12/3.13: `basedosdados` e `pysus` juntos forçam o `pip` a instalar uma versão antiga e fixa de uma dependência transitiva (`cffi==1.15.1`) que **não tem instalador pronto para Python 3.12+ no Windows** — sem 3.11, o `pip install` trava pedindo o "Microsoft Visual C++ Build Tools" (~6GB) para compilar do zero. Confirmado testando em ambiente limpo; ver detalhe técnico no final desta seção.
 - Conta no Google Cloud com um projeto de billing configurado (necessário para RAIS/CAGED/CID-10, que usam `basedosdados`/BigQuery — ver `docs/` ou perguntar no grupo do time como configurar `gcloud auth application-default login`)
 - VSCode com extensões: Python, Jupyter, PostgreSQL (ou pgAdmin à parte)
 
@@ -65,6 +65,8 @@ python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
+
+**Detalhe técnico do problema do `cffi`** (por que precisa ser Python 3.11): sozinho, `basedosdados` pede uma versão moderna de `cffi` (via `cryptography`/`google-auth`, sem problema). Sozinho, `pysus` nem usa `cffi`. Mas **os dois instalados juntos** fazem o resolvedor de dependências do `pip` recuar para uma combinação mais antiga de pacotes — incluindo `cffi==1.15.1` — para satisfazer as duas listas de exigências ao mesmo tempo. Essa versão específica do `cffi` só tem instalador pronto (wheel) para Windows até o Python 3.11; em 3.12/3.13 o `pip` tenta compilar do zero e precisa do Visual C++ Build Tools. Testamos forçar uma versão mais nova do `cffi` antes de instalar os outros pacotes — não resolveu, o `pip` reverte de qualquer forma. Se alguém preferir não trocar de versão do Python, a alternativa é instalar o "Microsoft C++ Build Tools" (aba "Desktop development with C++" no instalador do Visual Studio).
 
 ### 3. Configurar o `.env`
 
