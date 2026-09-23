@@ -3,7 +3,7 @@ import os
 import pandas as pd
 
 # Pasta raiz onde estão as subpastas dos dados brutos (cat, cnae, sinan, cbo, caged, cid10, rais).
-BRUTOS_DIR = r"C:\Users\CamiG\Downloads\brutos"
+BRUTOS_DIR = r"SEU-CAMINHO"
 
 
 def transformar_cbo():
