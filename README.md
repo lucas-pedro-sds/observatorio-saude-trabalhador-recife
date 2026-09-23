@@ -53,9 +53,10 @@ exemplo). Sugestão de estrutura por tabela — copiar para cada uma:
 ### 1. Pré-requisitos
 
 - Python 3.11+
-- Conta no Google Cloud com um projeto de billing configurado (necessário para RAIS/CAGED/CID-10, que usam `basedosdados`/BigQuery — ver `docs/` ou perguntar no grupo do time como configurar `gcloud auth application-default login`)
 - VSCode com extensões: Python, Jupyter, PostgreSQL (ou pgAdmin à parte)
-- (Opcional) Conexão já feita
+- Conexão já feita com o PostgreSQL para rodar o banco por linha de comando
+- (Caso queira rodar `pipeline/01_coleta.py`)Conta no Google Cloud com um projeto de billing configurado (necessário para RAIS/CAGED/CID-10, que usam `basedosdados`/BigQuery — ver `docs/` ou perguntar no grupo do time como configurar `gcloud auth application-default login`)
+
 
 ### 2. Clonar e instalar dependências
 
@@ -69,18 +70,8 @@ pip install -r requirements.txt --use-deprecated=legacy-resolver # Solução par
 
 ### 3. Configurar o `.env`
 
-Caso use o banco **compartilhado na nuvem (Aiven)**, não local — não precisa instalar PostgreSQL na sua máquina. Copie `.env.example` para `.env` e preencha:
 
-```
-GCP_BILLING_PROJECT_ID=<seu-projeto-gcp>
-DB_HOST=<peça no grupo do time>
-DB_PORT=<peça no grupo do time>
-DB_NAME=defaultdb 
-DB_USER=<peça no grupo do time>
-DB_PASSWORD=<peça no grupo do time>
-```
-
-O schema (`sql/01_schema.sql`) já está aplicado no banco compartilhado — só aplique de novo se estiver testando localmente (ex: Postgres via Docker) antes de mexer em algo sensível.
+O schema (`sql/01_schema.sql`) já está aplicado no banco compartilhado — só aplique de novo se estiver criando um banco localmente (ex: Postgres via Docker) antes de mexer em algo sensível.
 
 Caso use um banco local use:
 ```bash
@@ -94,9 +85,9 @@ E altere o .env para suas configurações do postgreSQL
 ```
 DB_HOST=localhost
 DB_PORT=5432
-DB_NAME= <Seu_banco>
+DB_NAME= <Seu_Banco>
 DB_USER= <Seu_Usuario>
-DB_PASSWORD=<Sua_senha>
+DB_PASSWORD=<Sua_Senha>
 ```
 
 E altere a linha 6 de pipeline/02_transformacao.py para o caminho que os arquivos estejam baixados
@@ -106,9 +97,8 @@ BRUTOS_DIR = r"SEU-CAMINHO"
 ### 4. Rodar o pipeline (fonte → banco), fim a fim
 
 ```bash
-python pipeline/01_coleta.py #Não necessario caso já tenho os arquivos no local
-python pipeline/02_transformacao.py
-python pipeline/03_carga.py
+python pipeline/01_coleta.py # Não necessario caso já tenho os arquivos no local
+python pipeline/03_carga.py # Irá rodar o pipeline/02_transformacao.py sozinho, pois ele quem chama as funções criadas nesse arquivo
 ```
 
 **Aviso importante**: `01_coleta.py` sozinho **não funciona do zero num clone limpo** para todas as fontes:
