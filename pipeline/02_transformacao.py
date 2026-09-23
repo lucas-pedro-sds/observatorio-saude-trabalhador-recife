@@ -1,11 +1,16 @@
+import os
+
 import pandas as pd
+
+# Pasta raiz onde estão as subpastas dos dados brutos (cat, cnae, sinan, cbo, caged, cid10, rais).
+BRUTOS_DIR = r"C:\Users\CamiG\Downloads\brutos"
 
 
 def transformar_cbo():
     """Tabela de ocupações CBO 2002, pronta para join com CAGED/RAIS.
     """
     df = pd.read_csv(
-        "dados/brutos/cbo/ESTRUTURA CBO/CBO2002 - Ocupacao.csv",
+        os.path.join(BRUTOS_DIR, "cbo", "ESTRUTURA CBO", "CBO2002 - Ocupacao.csv"),
         sep=";",
         encoding="latin1",
         dtype={"CODIGO": str},
@@ -36,7 +41,7 @@ def transformar_rais():
     """
     colunas_codigo = ["sigla_uf", "id_municipio", "cnae_2", "cnae_2_subclasse", "cep"]
     df = pd.read_csv(
-        "dados/brutos/rais/rais_recife_2023_2025.csv",
+        os.path.join(BRUTOS_DIR, "rais", "rais_recife_2023_2025.csv"),
         dtype={coluna: str for coluna in colunas_codigo},
     )
 
@@ -83,7 +88,7 @@ def transformar_cat():
     comparáveis sem ajuste, documentado como limitação conhecida.
     """
     df = pd.read_csv(
-        "dados/brutos/cat/cat_recife_unificado.csv",
+        os.path.join(BRUTOS_DIR, "cat", "cat_recife_unificado.csv"),
         dtype={"CBO": str, "CNAE2.0 Empregador": str},
     )
 
@@ -151,7 +156,7 @@ def transformar_cnae():
     o placeholder 9999999 que aparece na RAIS/CAGED sem Classe real correspondente.
     """
     df = pd.read_excel(
-        "dados/brutos/cnae/CNAE20_EstruturaDetalhada.xls",
+        os.path.join(BRUTOS_DIR, "cnae", "CNAE20_EstruturaDetalhada.xls"),
         sheet_name="Est. Detalhada CNAE 2.0",
     )
 
@@ -195,7 +200,10 @@ def transformar_cnae():
 
 def transformar_cid10():
     """Tabela de referência CID-10 (subcategoria = chave de junção, 4 caracteres)."""
-    return pd.read_csv("dados/brutos/cid10/cid10.csv", dtype={"subcategoria": str, "categoria": str})
+    return pd.read_csv(
+        os.path.join(BRUTOS_DIR, "cid10", "cid10.csv"),
+        dtype={"subcategoria": str, "categoria": str},
+    )
 
 
 def transformar_sinan_acgr():
@@ -217,7 +225,7 @@ def transformar_sinan_acgr():
         "MUN_ATENDE", "UNI_ATENDE", "CID_LESAO", "CAT",
     ]
     df = pd.read_csv(
-        "dados/brutos/sinan/sinan_acgr_recife_2023_2025.csv",
+        os.path.join(BRUTOS_DIR, "sinan", "sinan_acgr_recife_2023_2025.csv"),
         dtype={coluna: str for coluna in colunas_codigo},
     )
     df.columns = df.columns.str.lower()
@@ -252,7 +260,7 @@ def transformar_sinan_acbi():
         "TIPO_ACID", "CAT",
     ]
     df = pd.read_csv(
-        "dados/brutos/sinan/sinan_acbi_recife_2023_2025.csv",
+        os.path.join(BRUTOS_DIR, "sinan", "sinan_acbi_recife_2023_2025.csv"),
         dtype={coluna: str for coluna in colunas_codigo},
     )
     df.columns = df.columns.str.lower()
@@ -276,7 +284,7 @@ def transformar_caged():
     """
     colunas_codigo = ["cbo_2002", "id_municipio", "cnae_2_secao", "cnae_2_subclasse"]
     df = pd.read_csv(
-        "dados/brutos/caged/caged_recife_2023_2025.csv",
+        os.path.join(BRUTOS_DIR, "caged", "caged_recife_2023_2025.csv"),
         dtype={coluna: str for coluna in colunas_codigo},
     )
 
