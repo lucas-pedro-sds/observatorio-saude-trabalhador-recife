@@ -39,8 +39,8 @@ A gerência da VISAT (Vigilância em Saúde do Trabalhador), responsável por de
 
 | #            | Pergunta                                                                                      | Que decisão ela informa?                                      | Respondível com os dados? (verificado na amostra) |
 | ------------ | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------- |
-| 1            | Onde se concentram os acidentes e adoecimentos, por território e por CNAE?                    | Onde priorizar inspeções e ações territoriais                 | Sim (CAT + RAIS)                                  |
-| 2            | Que ocupações (CBO) e diagnósticos (CID-10) aparecem mais, e o perfil mudou?                  | Quais grupos prioritários e tendências                        | Sim (CAT)                                         |
+| 1            | 1-Quais atividades econômicas (CNAE) concentram mais acidentes e adoecimentos do trabalho no Recife, proporcionalmente ao número de trabalhadores formais, e como isso mudou nos últimos três anos?                    | Onde priorizar inspeções e ações territoriais                 | Sim (CAT + RAIS)                                  |
+| 2            | Quais ocupações (CBO) e diagnósticos (CID-10) respondem pela maior parte das CATs registradas no Recife, e essa composição mudou entre o primeiro e o último dos três anos?                  | Quais grupos prioritários e tendências                        | Sim (CAT)                                         |
 | 3            | Onde há muito vínculo formal e pouca notificação — sinal de subnotificação, não de segurança? | Onde investigar subnotificação vs. real segurança             | Sim (CAT + RAIS)                                  |
 | 4 (opcional) | A procura pela rede de saúde acompanha o mapa do trabalho formal ou aponta para o informal?   | Ajustar oferta de serviços vs. informalidade                  | Parcial (CAT + RAIS; SINAN depois)                |
 
