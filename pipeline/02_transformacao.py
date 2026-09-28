@@ -110,7 +110,9 @@ def transformar_cat():
     ]
     df = df.drop_duplicates(subset=chave_identidade, keep="last").reset_index(drop=True)
 
-    df["CID-10"] = df["CID-10"].str[:4]
+    # upper(): algumas CATs vêm com o CID digitado em minúsculas (ex: "s602"), que não
+    # casariam com dim_cid10.
+    df["CID-10"] = df["CID-10"].str[:4].str.upper()
 
     df["id_municipio"] = df["Munic Empr"].str.split("-").str[0].str.strip()
     df["cnae"] = df["CNAE2.0 Empregador"].str.zfill(4)
