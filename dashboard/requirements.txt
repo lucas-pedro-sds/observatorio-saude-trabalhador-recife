@@ -1,0 +1,8 @@
+# Dependências só do dashboard. O Streamlit Community Cloud usa este arquivo (o da pasta do app)
+# em vez do requirements.txt da raiz, que traz basedosdados/pysus e não é necessário aqui.
+streamlit>=1.50
+plotly>=5.24
+pandas>=2.2
+SQLAlchemy>=2.0
+psycopg2-binary>=2.9
+python-dotenv>=1.0

@@ -20,3 +20,6 @@ pyreaddbc>=2.0.4
 # pysus declara loguru<0.7, mas isso conflita com basedosdados (exige >=0.7). Testado:
 # loguru>=0.7 funciona bem com os dois pacotes, apesar do aviso do pip ao instalar.
 loguru>=0.7.0
+# Dashboard (dashboard/app.py)
+streamlit>=1.50
+plotly>=5.24

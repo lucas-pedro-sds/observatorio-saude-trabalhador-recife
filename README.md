@@ -103,6 +103,22 @@ Rode `python pipeline/01_coleta.py <fonte>` (ex: `rais`, `sinan`) para testar s�
 jupyter notebook analises/eda.ipynb
 ```
 
+### 6. Rodar o dashboard
+
+O dashboard (`dashboard/`, em Streamlit) lê o mesmo banco da EDA, com as mesmas consultas do notebook, e tem
+uma página por pergunta do canvas. Rode **da raiz do repositório**, para o Streamlit achar o tema em
+`.streamlit/config.toml`:
+
+```bash
+pip install -r dashboard/requirements.txt   # só o necessário para o dashboard
+streamlit run dashboard/app.py
+```
+
+Localmente, as credenciais vêm do `.env`. Para publicar no Streamlit Community Cloud: aponte o app para
+`dashboard/app.py` e cole o conteúdo de `.streamlit/secrets.toml.example`, preenchido, em **App settings >
+Secrets**. Use o usuário de leitura `time_analise`, não o admin. As consultas ficam em cache por 6 horas, e o
+Aiven gratuito pode desligar por inatividade, então abra o app alguns minutos antes de uma apresentação.
+
 ## Acesso ao banco para análise (DBeaver)
 
 O time de análise não precisa da pipeline Python — só consultar o banco já populado, com um usuário de leitura (`time_analise`).
