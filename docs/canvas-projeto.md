@@ -21,8 +21,7 @@ Lembre da regra do E2: **não existe viabilidade sem amostra baixada e aberta.**
 ## 1. Problema de negócio
 
 ```
-A gerência da VISAT (Secretaria de Saúde do Recife) precisa decidir onde inspecionar e que política de saúde do trabalhador levar a cada território, mas hoje o diagnóstico do perfil do trabalhador recifense é feito sob demanda, com relatórios pontuais — sem a dinamicidade de um observatório contínuo. Isso limita o direcionamento de políticas e
-inspeções aos territórios de maior vulnerabilidade.
+A gerência da VISAT (Secretaria de Saúde do Recife) precisa decidir onde inspecionar e que política de saúde do trabalhador levar a cada território, mas hoje o diagnóstico do perfil do trabalhador recifense é feito sob demanda, com relatórios pontuais — sem a dinamicidade de um observatório contínuo. Isso limita o direcionamento de políticas e inspeções aos territórios de maior vulnerabilidade.
 ```
 
 ---
@@ -39,8 +38,8 @@ A gerência da VISAT (Vigilância em Saúde do Trabalhador), responsável por de
 
 | #            | Pergunta                                                                                      | Que decisão ela informa?                                      | Respondível com os dados? (verificado na amostra) |
 | ------------ | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------- |
-| 1            | Quais atividades econômicas (CNAE) concentram mais acidentes e adoecimentos do trabalho no Recife, proporcionalmente ao número de trabalhadores formais, e como isso mudou nos últimos três anos? | Sim (CAT + RAIS)                                  |
-| 2            |Quais ocupações (CBO) e diagnósticos (CID-10) respondem pela maior parte das CATs registradas no Recife, e essa composição mudou entre o primeiro e o último dos três anos?| Quais grupos prioritários e tendências                        | Sim (CAT)                                         |
+| 1            | Quais atividades econômicas (CNAE) concentram mais acidentes e adoecimentos do trabalho no Recife, proporcionalmente ao número de trabalhadores formais, e como isso mudou nos últimos três anos? | Onde priorizar inspeções e ações territoriais | Sim (CAT + RAIS)                                  |
+| 2            | Quais ocupações (CBO) e diagnósticos (CID-10) respondem pela maior parte das CATs registradas no Recife, e essa composição mudou entre o primeiro e o último dos três anos?| Quais grupos prioritários e tendências                        | Sim (CAT)                                         |
 | 3            | Onde há muito vínculo formal e pouca notificação — sinal de subnotificação, não de segurança? | Onde investigar subnotificação vs. real segurança             | Sim (CAT + RAIS)                                  |
 | 4 (opcional) | A procura pela rede de saúde acompanha o mapa do trabalho formal ou aponta para o informal?   | Ajustar oferta de serviços vs. informalidade                  | Parcial (CAT + RAIS; SINAN depois)                |
 
@@ -101,12 +100,12 @@ A gerência da VISAT (Vigilância em Saúde do Trabalhador), responsável por de
 | Papel | Titular | Sombra / Apoio |
 |---|---|---|
 | **Product Owner (PO)** |  Lucas Pedro | Lia Marinho |
-| **QA de Dados** | Gabriel Caminha | — |
-| **Engenharia de Dados** | Gabriel Araújo | Matheus |
-| **Modelagem e Banco de Dados** | Gabriel Araújo | Matheus |
+| **QA de Dados** | Gabriel Caminha | Lucas Pedro |
+| **Engenharia de Dados** | Gabriel Araújo | Matheus Henrique |
+| **Modelagem e Banco de Dados** | Gabriel Araújo | Matheus Henrique |
 | **Análise de Dados** | Guilherme Santana| Guilherme Melo |
 | **Visualização de Dados** | Robertha Miranda | Gabriel Caminha |
-| **Narrativa e Pitch** | Lia Marinho |  Robertha Miranda, Matheus |
+| **Narrativa e Pitch** | Lia Marinho |  Robertha Miranda / Matheus Henrique |
 
 **Canal de comunicação da equipe (fora do horário de aula):**
 
