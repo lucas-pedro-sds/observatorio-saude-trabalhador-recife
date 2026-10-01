@@ -31,7 +31,7 @@ def criar_engine():
     host = os.getenv("DB_HOST")
     porta = os.getenv("DB_PORT")
     banco = os.getenv("DB_NAME")
-    return create_engine(f"postgresql+psycopg2://{usuario}:{senha}@{host}:{porta}/{banco}?sslmode=require")
+    return create_engine(f"postgresql+psycopg2://{usuario}:{senha}@{host}:{porta}/{banco}?sslmode=disable")
 
 
 def carregar(nomes_tabelas, engine):

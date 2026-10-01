@@ -54,7 +54,6 @@ exemplo). Sugestão de estrutura por tabela — copiar para cada uma:
 
 - **Python 3.11** especificamente (no Windows). Não use 3.12/3.13: `basedosdados` e `pysus` juntos forçam o `pip` a instalar uma versão antiga e fixa de uma dependência transitiva (`cffi==1.15.1`) que **não tem instalador pronto para Python 3.12+ no Windows** — sem 3.11, o `pip install` trava pedindo o "Microsoft Visual C++ Build Tools" (~6GB) para compilar do zero. Confirmado testando em ambiente limpo; ver detalhe técnico no final desta seção.
 - Conta no Google Cloud com um projeto de billing configurado (necessário para RAIS/CAGED/CID-10, que usam `basedosdados`/BigQuery — ver `docs/` ou perguntar no grupo do time como configurar `gcloud auth application-default login`)
-- VSCode com extensões: Python, Jupyter, PostgreSQL (ou pgAdmin à parte)
 
 ### 2. Clonar e instalar dependências
 
@@ -63,32 +62,42 @@ git clone <link-do-repo>
 cd observatorio-saude-trabalhador-recife
 python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
+pip install -r requirements.txt --use-deprecated=legacy-resolver # Solução para os conflitos no requirements
 ```
 
 **Detalhe técnico do problema do `cffi`** (por que precisa ser Python 3.11): sozinho, `basedosdados` pede uma versão moderna de `cffi` (via `cryptography`/`google-auth`, sem problema). Sozinho, `pysus` nem usa `cffi`. Mas **os dois instalados juntos** fazem o resolvedor de dependências do `pip` recuar para uma combinação mais antiga de pacotes — incluindo `cffi==1.15.1` — para satisfazer as duas listas de exigências ao mesmo tempo. Essa versão específica do `cffi` só tem instalador pronto (wheel) para Windows até o Python 3.11; em 3.12/3.13 o `pip` tenta compilar do zero e precisa do Visual C++ Build Tools. Testamos forçar uma versão mais nova do `cffi` antes de instalar os outros pacotes — não resolveu, o `pip` reverte de qualquer forma. Se alguém preferir não trocar de versão do Python, a alternativa é instalar o "Microsoft C++ Build Tools" (aba "Desktop development with C++" no instalador do Visual Studio).
 
 ### 3. Configurar o `.env`
 
-O banco é **compartilhado na nuvem (Aiven)**, não local — não precisa instalar PostgreSQL na sua máquina. Copie `.env.example` para `.env` e preencha:
 
+O schema (`sql/01_schema.sql`) já está aplicado no banco compartilhado — só aplique de novo se estiver criando um banco localmente (ex: Postgres via Docker) antes de mexer em algo sensível.
+
+Caso use um banco local use:
+```bash
+# Cria o banco
+createdb -U seu_usuario seu_banco
+
+# Executa o arquivo SQL dentro dele
+psql -U seu_usuario -d seu_banco -f sql/01_schema.sql
 ```
-GCP_BILLING_PROJECT_ID=<seu-projeto-gcp>
-DB_HOST=<peça no grupo do time>
-DB_PORT=<peça no grupo do time>
-DB_NAME=defaultdb
-DB_USER=<peça no grupo do time>
-DB_PASSWORD=<peça no grupo do time>
+E altere o .env para suas configurações do postgreSQL
+```
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME= <Seu_Banco>
+DB_USER= <Seu_Usuario>
+DB_PASSWORD=<Sua_Senha>
 ```
 
-O schema (`sql/01_schema.sql`) já está aplicado no banco compartilhado — só aplique de novo se estiver testando localmente (ex: Postgres via Docker) antes de mexer em algo sensível.
-
+E altere a linha 6 de pipeline/02_transformacao.py para o caminho que os arquivos estejam baixados
+```bash
+BRUTOS_DIR = r"SEU-CAMINHO"
+```
 ### 4. Rodar o pipeline (fonte → banco), fim a fim
 
 ```bash
-python pipeline/01_coleta.py
-python pipeline/02_transformacao.py
-python pipeline/03_carga.py
+python pipeline/01_coleta.py # Não necessario caso já tenho os arquivos no local
+python pipeline/03_carga.py # Irá rodar o pipeline/02_transformacao.py sozinho, pois ele quem chama as funções criadas nesse arquivo
 ```
 
 **Aviso importante**: `01_coleta.py` sozinho **não funciona do zero num clone limpo** para todas as fontes:
