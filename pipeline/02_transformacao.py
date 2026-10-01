@@ -86,11 +86,38 @@ def transformar_cat():
     Nota: o código de "cnae" aqui vem em granularidade diferente do cnae_2_subclasse
     usado na RAIS/CAGED (INSS não usa o mesmo nível de detalhe) — não são diretamente
     comparáveis sem ajuste, documentado como limitação conhecida.
+
+    Remove registros duplicados: os arquivos mensais do INSS se sobrepõem (alguns
+    vêm "dobrados", com registros que já estavam em outro arquivo). Na coleta de
+    2023-2025 foram ~1.700 duplicatas (10,9% das linhas), concentradas nesses meses.
+    A identidade do registro usa campos estáveis, incluindo CNPJ e data de nascimento
+    completa — por isso a remoção acontece ANTES de descartá-los mais abaixo. Campos
+    que mudam com o tempo (datas de despacho/emissão, espécie do benefício) ficam de
+    fora da chave, e mantemos a ocorrência mais recente (arquivo mais novo).
+
+    Também remove espaços à direita dos textos (o INSS grava em largura fixa) e o
+    sufixo de 2 letras (NU/UL) que vem junto com o CID-10 em algumas linhas — junto
+    da descrição corrompida na origem —, mantendo os 4 primeiros caracteres do código.
     """
     df = pd.read_csv(
         os.path.join(BRUTOS_DIR, "cat", "cat_recife_unificado.csv"),
         dtype={"CBO": str, "CNAE2.0 Empregador": str},
     )
+
+    colunas_texto = df.select_dtypes(include="object").columns
+    df[colunas_texto] = df[colunas_texto].apply(lambda coluna: coluna.str.strip())
+
+    chave_identidade = [
+        "Data Acidente", "Data Nascimento", "Sexo", "CBO", "CID-10",
+        "CNAE2.0 Empregador", "Munic Empr", "Tipo do Acidente", "Natureza da Lesão",
+        "Parte Corpo Atingida", "Agente  Causador  Acidente", "CNPJ/CEI Empregador",
+        "Filiação Segurado", "Indica Óbito Acidente",
+    ]
+    df = df.drop_duplicates(subset=chave_identidade, keep="last").reset_index(drop=True)
+
+    # upper(): algumas CATs vêm com o CID digitado em minúsculas (ex: "s602"), que não
+    # casariam com dim_cid10.
+    df["CID-10"] = df["CID-10"].str[:4].str.upper()
 
     df["id_municipio"] = df["Munic Empr"].str.split("-").str[0].str.strip()
     df["cnae"] = df["CNAE2.0 Empregador"].str.zfill(4)

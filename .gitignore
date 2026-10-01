@@ -19,3 +19,5 @@ output/
 Thumbs.db
 .vscode/
 .idea/
+# Streamlit (credenciais do dashboard)
+.streamlit/secrets.toml

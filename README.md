@@ -52,11 +52,8 @@ exemplo). Sugestão de estrutura por tabela — copiar para cada uma:
 
 ### 1. Pré-requisitos
 
-- Python 3.11+
-- VSCode com extensões: Python, Jupyter, PostgreSQL (ou pgAdmin à parte)
-- Conexão já feita com o PostgreSQL para rodar o banco por linha de comando
-- (Caso queira rodar `pipeline/01_coleta.py`)Conta no Google Cloud com um projeto de billing configurado (necessário para RAIS/CAGED/CID-10, que usam `basedosdados`/BigQuery — ver `docs/` ou perguntar no grupo do time como configurar `gcloud auth application-default login`)
-
+- **Python 3.11** especificamente (no Windows). Não use 3.12/3.13: `basedosdados` e `pysus` juntos forçam o `pip` a instalar uma versão antiga e fixa de uma dependência transitiva (`cffi==1.15.1`) que **não tem instalador pronto para Python 3.12+ no Windows** — sem 3.11, o `pip install` trava pedindo o "Microsoft Visual C++ Build Tools" (~6GB) para compilar do zero. Confirmado testando em ambiente limpo; ver detalhe técnico no final desta seção.
+- Conta no Google Cloud com um projeto de billing configurado (necessário para RAIS/CAGED/CID-10, que usam `basedosdados`/BigQuery — ver `docs/` ou perguntar no grupo do time como configurar `gcloud auth application-default login`)
 
 ### 2. Clonar e instalar dependências
 
@@ -67,6 +64,8 @@ python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt --use-deprecated=legacy-resolver # Solução para os conflitos no requirements
 ```
+
+**Detalhe técnico do problema do `cffi`** (por que precisa ser Python 3.11): sozinho, `basedosdados` pede uma versão moderna de `cffi` (via `cryptography`/`google-auth`, sem problema). Sozinho, `pysus` nem usa `cffi`. Mas **os dois instalados juntos** fazem o resolvedor de dependências do `pip` recuar para uma combinação mais antiga de pacotes — incluindo `cffi==1.15.1` — para satisfazer as duas listas de exigências ao mesmo tempo. Essa versão específica do `cffi` só tem instalador pronto (wheel) para Windows até o Python 3.11; em 3.12/3.13 o `pip` tenta compilar do zero e precisa do Visual C++ Build Tools. Testamos forçar uma versão mais nova do `cffi` antes de instalar os outros pacotes — não resolveu, o `pip` reverte de qualquer forma. Se alguém preferir não trocar de versão do Python, a alternativa é instalar o "Microsoft C++ Build Tools" (aba "Desktop development with C++" no instalador do Visual Studio).
 
 ### 3. Configurar o `.env`
 
@@ -112,6 +111,22 @@ Rode `python pipeline/01_coleta.py <fonte>` (ex: `rais`, `sinan`) para testar s�
 ```bash
 jupyter notebook analises/eda.ipynb
 ```
+
+### 6. Rodar o dashboard
+
+O dashboard (`dashboard/`, em Streamlit) lê o mesmo banco da EDA, com as mesmas consultas do notebook, e tem
+uma página por pergunta do canvas. Rode **da raiz do repositório**, para o Streamlit achar o tema em
+`.streamlit/config.toml`:
+
+```bash
+pip install -r dashboard/requirements.txt   # só o necessário para o dashboard
+streamlit run dashboard/app.py
+```
+
+Localmente, as credenciais vêm do `.env`. Para publicar no Streamlit Community Cloud: aponte o app para
+`dashboard/app.py` e cole o conteúdo de `.streamlit/secrets.toml.example`, preenchido, em **App settings >
+Secrets**. Use o usuário de leitura `time_analise`, não o admin. As consultas ficam em cache por 6 horas, e o
+Aiven gratuito pode desligar por inatividade, então abra o app alguns minutos antes de uma apresentação.
 
 ## Acesso ao banco para análise (DBeaver)
 
@@ -175,3 +190,5 @@ O SINAN (grupo ACGR, `pipeline/01_coleta.py:coletar_sinan_acgr()`, tabela `fato_
 O SINAN também tem o grupo **ACBI** (acidente com material biológico — `coletar_sinan_acbi()`, tabela `fato_sinan_acbi`), mantido como tabela separada (não unificada com o ACGR): é um formulário bem diferente (68 colunas, foco em protocolo de biossegurança — tipo de exposição, EPI usado, esquema vacinal —, sem nenhum campo de CID-10). Duas diferenças em relação ao ACGR: (1) não existe `MUN_ACID` nesse formulário, então o filtro geográfico usa `mun_emp` (município do empregador) como proxy do local do acidente, mesma lógica e mesma limitação já documentada para a CAT; (2) `sem_acid` (semana epidemiológica) precisou de `INTEGER` em vez de `SMALLINT` no schema — a fonte tem pelo menos um valor claramente errado (`197729`, ano "1977" não faz sentido no recorte 2023-2025), mas optamos por um tipo mais largo em vez de filtrar a linha, já que não é nosso papel corrigir erro de digitação da fonte original sem confirmar com o time.
 
 Também há um conflito de versão conhecido entre `pysus` e `basedosdados` na dependência `loguru` (`pysus` declara `<0.7`, `basedosdados` exige `>=0.7`) — testado e confirmado que `loguru>=0.7` funciona bem com os dois pacotes, apesar do aviso que o `pip` mostra ao instalar (ver comentário no `requirements.txt`).
+
+**Cobertura irregular e duplicatas nos arquivos mensais da CAT (achado ao escrever as consultas de `sql/02_consultas_analise.sql`).** Os arquivos do INSS não têm volume regular: entre set/2024 e mai/2025 chegam com 3 a 20 mil linhas no Brasil inteiro (o normal é 50 a 60 mil), nov e dez/2025 têm 205 e 126 linhas (1 registro de Recife cada), e os arquivos de abr/2024, jun/2025 e jun/2026 vêm "dobrados" (100 a 215 mil linhas). Consequências: (1) **nenhum ano da CAT está completo** — contagens absolutas por período são subestimadas e séries mensais não são confiáveis; (2) os arquivos se sobrepõem, então a unificação da coleta trazia ~1.700 registros duplicados (10,9% das linhas), concentrados nos meses dos arquivos dobrados. A `transformar_cat()` agora remove as duplicatas (chave de identidade com CNPJ, data de nascimento e demais campos estáveis, aplicada antes de descartar os campos sensíveis) e o total passa de 15.729 para 14.020 registros (correção aplicada na `fato_cat` da produção em 24/09/2026). Jul/2025 continua com volume anormalmente alto (~1.030) mesmo depois disso, causa ainda não identificada. A solução definitiva é obter do INSS os arquivos mensais completos de set/2024 a mai/2025, nov-dez/2025 e mai/2026. Enquanto isso, as consultas de comparação entre anos usam só meses com cobertura adequada nos dois anos (ver `sql/02_consultas_analise.sql`).

@@ -1,0 +1,36 @@
+# Tema do dashboard (dashboard/app.py). Fica na raiz porque o Streamlit procura
+# .streamlit/ no diretório de onde o app é executado: `streamlit run dashboard/app.py`.
+# As cores dos gráficos ficam em dashboard/visual.py (o Plotly não lê este arquivo).
+
+[theme]
+font = "sans-serif"
+headingFont = "serif"
+baseRadius = "medium"
+showSidebarBorder = true
+
+[theme.light]
+primaryColor = "#B35C33"
+backgroundColor = "#F6F1E7"
+secondaryBackgroundColor = "#EDE5D6"
+textColor = "#2F2A24"
+borderColor = "#DDD3C2"
+linkColor = "#8E4521"
+dataframeHeaderBackgroundColor = "#EDE5D6"
+
+[theme.light.sidebar]
+backgroundColor = "#EFE8DA"
+
+[theme.dark]
+primaryColor = "#C8693C"
+backgroundColor = "#1C1A17"
+secondaryBackgroundColor = "#2A2622"
+textColor = "#F1EBE0"
+borderColor = "#3A352F"
+linkColor = "#E09A73"
+dataframeHeaderBackgroundColor = "#2A2622"
+
+[theme.dark.sidebar]
+backgroundColor = "#221F1B"
+
+[client]
+toolbarMode = "minimal"
