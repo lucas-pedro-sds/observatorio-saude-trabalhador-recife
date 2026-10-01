@@ -1,47 +1,122 @@
-"""Conexão com o PostgreSQL (Aiven) e as consultas do dashboard.
+"""Fonte de dados do dashboard: o PostgreSQL ao vivo ou a cópia salva em dashboard/snapshot/.
 
 As consultas são as mesmas de analises/eda.ipynb (Q0 a Q4), sem os LIMITs: o corte
-para o top N é feito na página, pelo filtro. Se uma regra mudar no notebook, mude aqui também.
+para o top N é feito na página, pelo filtro. Se uma regra mudar no notebook, mude aqui também
+e rode `python dashboard/exportar_dados.py` para atualizar a cópia.
 
-Credenciais: no Streamlit Community Cloud, em Secrets (seção [db]); localmente, no .env
+De onde os dados vêm (variável DASHBOARD_FONTE, no .env ou em Secrets):
+- "banco": sempre do PostgreSQL;
+- "arquivos": sempre da cópia em snapshot/ (é o que o app publicado na nuvem usa);
+- vazio (padrão): do banco se houver credenciais e ele responder; senão, da cópia.
+
+Credenciais do banco: no Streamlit Community Cloud, em Secrets (seção [db]); localmente, no .env
 da raiz (as mesmas variáveis de pipeline/03_carga.py).
 """
 
+import json
 import os
+from datetime import datetime
+from pathlib import Path
 
 import pandas as pd
 import streamlit as st
 from dotenv import find_dotenv, load_dotenv
 from sqlalchemy import create_engine, text
+from sqlalchemy.pool import NullPool
+
+PASTA_COPIA = Path(__file__).parent / "snapshot"
+EXPORTAR_PARA = None  # exportar_dados.py preenche: cada consulta feita no banco também é salva aqui
+
+load_dotenv(find_dotenv(usecwd=True))
+
+
+def _config(chave, secao=None):
+    """Lê de st.secrets (nuvem) e, na falta, do ambiente/.env (local)."""
+    try:
+        return st.secrets[secao][chave] if secao else st.secrets[chave]
+    except Exception:  # sem secrets.toml, ou chave ausente
+        return None
 
 
 def _credenciais():
-    try:
-        return dict(st.secrets["db"])
-    except Exception:  # sem secrets.toml: roda local com o .env
-        load_dotenv(find_dotenv(usecwd=True))
-        return {
-            "user": os.getenv("DB_USER"),
-            "password": os.getenv("DB_PASSWORD"),
-            "host": os.getenv("DB_HOST"),
-            "port": os.getenv("DB_PORT"),
-            "name": os.getenv("DB_NAME"),
-        }
+    return {
+        "user": _config("user", "db") or os.getenv("DB_USER"),
+        "password": _config("password", "db") or os.getenv("DB_PASSWORD"),
+        "host": _config("host", "db") or os.getenv("DB_HOST"),
+        "port": _config("port", "db") or os.getenv("DB_PORT"),
+        "name": _config("name", "db") or os.getenv("DB_NAME"),
+    }
 
 
 @st.cache_resource
 def _engine():
     c = _credenciais()
+    # NullPool: a conexão abre na consulta e fecha logo depois. O Aiven gratuito tem só 12 vagas
+    # para o time inteiro, e um pool deixaria conexões paradas ocupando vaga enquanto o app roda.
+    # sslmode=prefer: usa SSL no Aiven (que exige) e também funciona num Postgres local sem SSL.
     return create_engine(
-        f"postgresql+psycopg2://{c['user']}:{c['password']}@{c['host']}:{c['port']}/{c['name']}?sslmode=require",
-        pool_pre_ping=True,  # reabre a conexão se o Aiven derrubar por inatividade
+        f"postgresql+psycopg2://{c['user']}:{c['password']}@{c['host']}:{c['port']}/{c['name']}?sslmode=prefer",
+        poolclass=NullPool,
+        connect_args={"connect_timeout": 15},
     )
 
 
+@st.cache_data(ttl=600, show_spinner="Conectando ao banco…")
+def _banco_responde():
+    try:
+        with _engine().connect() as conexao:
+            conexao.execute(text("SELECT 1"))
+        return True
+    except Exception:
+        return False
+
+
+def fonte():
+    """'banco' ou 'arquivos', conforme DASHBOARD_FONTE e a disponibilidade do banco."""
+    escolha = (_config("DASHBOARD_FONTE") or os.getenv("DASHBOARD_FONTE") or "").strip().lower()
+    if escolha in ("banco", "arquivos"):
+        return escolha
+    if not all(_credenciais().values()):
+        return "arquivos"
+    return "banco" if _banco_responde() else "arquivos"
+
+
+def descricao_fonte():
+    """Texto curto para a barra lateral dizendo de onde vêm os números."""
+    if fonte() == "banco":
+        return "Dados ao vivo do banco."
+    try:
+        info = json.loads((PASTA_COPIA / "_info.json").read_text(encoding="utf-8"))
+        data = datetime.fromisoformat(info["gerado_em"]).strftime("%d/%m/%Y")
+    except Exception:
+        data = "data desconhecida"
+    return f"Dados da cópia salva em {data}."
+
+
 @st.cache_data(ttl=6 * 3600, show_spinner="Consultando o banco…")
-def consulta(sql, **params):
+def _consultar_banco(sql):
     with _engine().connect() as conexao:
-        return pd.read_sql(text(sql), conexao, params=params)
+        return pd.read_sql(text(sql), conexao)
+
+
+@st.cache_data(show_spinner=False)
+def _ler_copia(nome):
+    arquivo = PASTA_COPIA / f"{nome}.parquet"
+    if not arquivo.exists():
+        st.error(f"Sem conexão com o banco e sem a cópia `{arquivo.name}`. "
+                 "Rode `python dashboard/exportar_dados.py` com o banco acessível.")
+        st.stop()
+    return pd.read_parquet(arquivo)
+
+
+def _ler(nome, sql):
+    """Resultado de uma consulta do dashboard. `nome` é também o nome do arquivo da cópia."""
+    if EXPORTAR_PARA is not None or fonte() == "banco":
+        df = _consultar_banco(sql)
+        if EXPORTAR_PARA is not None:
+            df.to_parquet(Path(EXPORTAR_PARA) / f"{nome}.parquet", index=False)
+        return df
+    return _ler_copia(nome)
 
 
 def _cobertura(inicio="2023-01-01", fim="2025-12-01"):
@@ -68,7 +143,7 @@ cobertura AS (
 
 def resumo_cat():
     """Totais da CAT no período, por tipo, sexo e óbito."""
-    return consulta("""
+    return _ler("resumo_cat", """
 SELECT count(*) AS total,
        count(*) FILTER (WHERE btrim(tipo_acidente) ILIKE 'T_pico') AS tipicos,
        count(*) FILTER (WHERE btrim(tipo_acidente) = 'Trajeto') AS trajeto,
@@ -83,7 +158,7 @@ WHERE data_acidente BETWEEN '2023-01-01' AND '2025-12-31'
 
 def cat_por_secao():
     """CATs 2023–2025 por seção da CNAE (letra), com a descrição da seção."""
-    return consulta("""
+    return _ler("cat_por_secao", """
 SELECT d.secao, count(*) AS cats
 FROM fato_cat f
 JOIN dim_cnae d ON d.classe_codigo_4 = f.cnae
@@ -97,7 +172,7 @@ ORDER BY cats DESC
 
 
 def q0_cobertura():
-    return consulta(f"""
+    return _ler("q0_cobertura", f"""
 WITH {_cobertura()}
 SELECT mes, n AS acidentes_cat, ok AS cobertura_adequada
 FROM cobertura
@@ -110,7 +185,7 @@ ORDER BY mes
 
 def q1a_setores():
     """Taxa anualizada por mil vínculos CLT, por CNAE (4 dígitos) e ano, só meses adequados."""
-    return consulta(f"""
+    return _ler("q1a_setores", f"""
 WITH {_cobertura()},
 meses_ok AS (
   SELECT extract(year FROM mes)::int AS ano, count(*) FILTER (WHERE ok) AS n_meses
@@ -159,7 +234,7 @@ HAVING count(*) = 3 AND min(t.vinculos) >= 2000 AND sum(t.ocorrencias) >= 30
 
 
 def q1b_cidade():
-    return consulta(f"""
+    return _ler("q1b_cidade", f"""
 WITH {_cobertura()},
 meses_ok AS (
   SELECT extract(year FROM mes)::int AS ano, count(*) FILTER (WHERE ok) AS n_meses
@@ -195,7 +270,7 @@ ORDER BY v.ano
 
 def q2_composicao():
     """Top 30 CBO e CID-10 (categoria) das CATs 2023–2025, com participação em 2023 × 2025."""
-    return consulta(f"""
+    return _ler("q2_composicao", f"""
 WITH {_cobertura()},
 comparaveis AS (
   SELECT extract(month FROM mes)::int AS mes_do_ano
@@ -273,7 +348,7 @@ ORDER BY t.dimensao, t.ranking
 
 def q3a_subnotificacao():
     """Esperado (vínculos × taxa da cidade) − observado, por CNAE com ≥ 3.000 vínculos-ano."""
-    return consulta("""
+    return _ler("q3a_subnotificacao", """
 WITH acidentes AS (
   SELECT cnae AS classe4, count(*) AS acidentes
   FROM fato_cat
@@ -310,7 +385,7 @@ ORDER BY diferenca DESC
 
 
 def q3b_verificacao():
-    return consulta("""
+    return _ler("q3b_verificacao", """
 WITH vinculos AS (
   SELECT DISTINCT d.classe_codigo_4 AS classe4
   FROM fato_rais r
@@ -330,7 +405,7 @@ WHERE f.data_acidente BETWEEN '2023-01-01' AND '2025-12-31'
 
 
 def q4a_situacao():
-    return consulta("""
+    return _ler("q4a_situacao", """
 SELECT CASE WHEN sit_trab IN (1, 4, 5) THEN 'Vínculo formal (CLT ou servidor)'
             WHEN sit_trab IN (2, 3, 10) THEN 'Sem registro, autônomo ou avulso'
             WHEN sit_trab IN (6, 7, 8, 9, 11, 12) THEN 'Outras situações'
@@ -345,7 +420,7 @@ ORDER BY notificacoes DESC
 
 
 def q4b_cat_emitida():
-    return consulta("""
+    return _ler("q4b_cat_emitida", """
 SELECT CASE cat WHEN '1' THEN 'CAT emitida'
                 WHEN '2' THEN 'CAT não emitida'
                 WHEN '3' THEN 'Não se aplica'
@@ -362,7 +437,7 @@ ORDER BY notificacoes DESC
 
 
 def q4c_mensal():
-    return consulta(f"""
+    return _ler("q4c_mensal", f"""
 WITH {_cobertura()},
 sinan AS (
   SELECT date_trunc('month', dt_acid)::date AS mes, count(*) AS n

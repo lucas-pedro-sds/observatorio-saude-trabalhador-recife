@@ -7,6 +7,8 @@ Rodar da raiz do repositório (para o Streamlit achar .streamlit/config.toml):
 
 import streamlit as st
 
+import dados
+
 st.set_page_config(
     page_title="Observatório de Saúde do Trabalhador · Recife",
     page_icon="🩺",
@@ -37,5 +39,6 @@ with st.sidebar:
     st.markdown("**Observatório de Saúde do Trabalhador**")
     st.caption("Recife · 2023–2025 · CAT, RAIS e SINAN")
     st.caption("Equipe Uma Ponte · NExT Dados (CESAR School). Dados públicos do INSS, MTE e DATASUS.")
+    st.caption(dados.descricao_fonte())
 
 pagina.run()

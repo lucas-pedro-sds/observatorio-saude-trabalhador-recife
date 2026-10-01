@@ -114,19 +114,31 @@ jupyter notebook analises/eda.ipynb
 
 ### 6. Rodar o dashboard
 
-O dashboard (`dashboard/`, em Streamlit) lê o mesmo banco da EDA, com as mesmas consultas do notebook, e tem
-uma página por pergunta do canvas. Rode **da raiz do repositório**, para o Streamlit achar o tema em
-`.streamlit/config.toml`:
+O dashboard (`dashboard/`, em Streamlit) tem uma página por pergunta do canvas e usa as mesmas consultas do
+notebook. Rode **da raiz do repositório**, para o Streamlit achar o tema em `.streamlit/config.toml`:
 
 ```bash
 pip install -r dashboard/requirements.txt   # só o necessário para o dashboard
 streamlit run dashboard/app.py
 ```
 
-Localmente, as credenciais vêm do `.env`. Para publicar no Streamlit Community Cloud: aponte o app para
-`dashboard/app.py` e cole o conteúdo de `.streamlit/secrets.toml.example`, preenchido, em **App settings >
-Secrets**. Use o usuário de leitura `time_analise`, não o admin. As consultas ficam em cache por 6 horas, e o
-Aiven gratuito pode desligar por inatividade, então abra o app alguns minutos antes de uma apresentação.
+**De onde vêm os dados.** Se o `.env` tem as credenciais e o banco responde, o dashboard lê o banco ao vivo.
+Senão, lê a cópia salva em `dashboard/snapshot/` (tabelas já agregadas, sem registros individuais, versionadas
+no repositório). A barra lateral mostra qual das duas está em uso. Para forçar uma delas, defina
+`DASHBOARD_FONTE=banco` ou `DASHBOARD_FONTE=arquivos` no `.env`. Sem `.env` nenhum, o dashboard funciona
+offline com a cópia, o que serve de plano B para a apresentação.
+
+**Atualizar a cópia** sempre que os dados do banco ou as consultas de `dashboard/dados.py` mudarem, e fazer
+commit da pasta `dashboard/snapshot/`:
+
+```bash
+python dashboard/exportar_dados.py
+```
+
+**Publicar no Streamlit Community Cloud:** em [share.streamlit.io](https://share.streamlit.io), *Create app*,
+branch `main`, arquivo `dashboard/app.py`, e Python 3.11 em *Advanced settings*. Não configure Secrets: sem
+credenciais, o app publicado usa a cópia e não ocupa nenhuma das poucas vagas de conexão do Aiven. O app
+hiberna depois de um tempo sem acesso; o primeiro acesso depois disso leva cerca de um minuto.
 
 ## Acesso ao banco para análise (DBeaver)
 
