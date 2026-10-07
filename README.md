@@ -12,7 +12,7 @@ orientado à decisão, para a Secretaria de Saúde do Recife (VISAT).
 
 | **Mentor** | 
 
-Diógenes Diniz e Andrei Lima |
+Diógenes Diniz e Andrei Lima|
 | **Tema** 
 
 | Observatório de Saúde do Trabalhador (Recife) |
