@@ -6,7 +6,21 @@ orientado à decisão, para a Secretaria de Saúde do Recife (VISAT).
 
 ## Equipe
 
-`[EQUIPE] listar integrantes e papéis — ver docs/canvas-projeto.md`
+ **Uma Ponte** 
+
+| **Integrantes** | <ul><li>Lia Marinho</li><li>Gabriel Caminha</li><li>Lucas Pedro</li><li>Gabriel Araújo</li><li>Guilherme Santana</li><li>Guilherme Melo</li><li>Robertha Miranda</li><li>Matheus Henrique</li></ul> 
+
+| **Mentor** | 
+
+Diógenes Diniz e Andrei Lima|
+| **Tema** 
+
+| Observatório de Saúde do Trabalhador (Recife) |
+| **Repositório GitHub** 
+
+| [observatorio-saude-trabalhador-recife](https://github.com/lucas-pedro-sds/observatorio-saude-trabalhador-recife) |
+
+| [Link para o Dashboard](https://datastudio.google.com/reporting/f189115e-9f76-48ca-9d91-913ed9a124ab/page/p_sz2drif27d) |
 
 ## Problema
 
