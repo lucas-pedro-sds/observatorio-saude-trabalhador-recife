@@ -1,3 +1,16 @@
+# Abertura — Lia (~20 s · Slide 01): Lia Marinho 
+
+Boa noite a todos. Somos a equipe Uma Ponte, e nosso lema resume o projeto: dados que aproximam decisões. Comigo, hoje, estão Lucas Pedro e Matheus Henrique; de forma remota, Gabriel Caminha e Gabriel Araújo. O projeto contou com a mentoria de Diógenes Cruz e Andrei Lima.
+
+## Problema — Lia (~1 min 20 s · Slide 02): Lia Marinho 
+
+A gerência da VISAT precisa decidir, com frequência, onde inspecionar e que política de saúde do trabalhador levar a cada território. Hoje, porém, esse diagnóstico ainda é feito sob demanda, com relatórios pontuais e estáticos. Falta um acompanhamento contínuo do risco. O efeito é direto: inspeções e políticas chegam tarde ou no lugar errado, e as áreas mais vulneráveis ficam sem prioridade. Em três anos de dados, vimos setores com taxa acima de 40 acidentes por mil vínculos e, ao mesmo tempo, setores com milhares de empregos formais e quase nenhuma CAT. Isso não é segurança: é apagão de informação.
+
+## Solução — Lucas (~1 min 20 s · Slide 03): Lucas
+ 
+Para responder a esse problema, construímos um observatório contínuo de saúde do trabalhador para a VISAT.  Unimos CAT e SINAN — acidentes e agravos — com RAIS e CAGED — emprego formal —, padronizamos com CNAE, CBO e CID-10 e entregamos um dashboard que orienta a decisão. O ciclo: dados públicos oficiais entram no pipeline, são limpos e unificados, vão para o banco e alimentam o dashboard. Tudo versionado e atualizável, sem caixa-preta.
+
+## Perguntas — Lucas (~1 min 20 s · Slide 04): Lucas
 *Abertura — Lia (~20 s · Slide 01):*
 
 Boa noite a todos. Somos a equipe Uma Ponte, e nosso lema resume o projeto: dados que aproximam decisões. Comigo, hoje, estão Lucas Pedro e Matheus Henrique; de forma remota, Gabriel Caminha e Gabriel Araújo. O projeto contou com a mentoria de Diógenes Cruz e Andrei Lima.
@@ -19,6 +32,7 @@ As quatro perguntas que o painel responde são as que a gestão precisa para pri
 -Onde há muito vínculo formal e quase nenhuma notificação;
 -A procura pela rede de saúde acompanha o formal ou aponta para o informal.
 
+## Demonstração — Caminha (~3 min · Slides 04 e 05 / tela do dashboard): Gabriel Caminha 
 *Demonstração — Caminha (~3 min · Slides 04 e 05 / tela do dashboard):*
 
 Agora vamos ver o dashboard em funcionamento.
@@ -59,6 +73,9 @@ Para a VISAT: a rede de saúde completa o que a CAT formal não captura.
 
 Com essas quatro questões, a VISAT vê onde o risco é alto, quem mais se acidenta, onde a CAT não sai e o quanto o informal já pesa no SUS.
 
+# Insights (reforço pós-demo)
+
+## Q1 — Gabriel (~20 s) Gabriel 
 *Insights (reforço pós-demo)*
 
 Q1 — Gabriel (~20 s)
@@ -66,21 +83,25 @@ Coleta de resíduos: maior taxa, até 48 por mil. Hospitais sobem em 2025. Taxa 
 
 VISAT: inspeção prioritária em coleta e hospitais.
 
+## Q2 — Matheus (~20 s) Matheus 
 Q2 — Matheus (~20 s)
 Enfermagem: cerca de 11% das CATs. Lesões de mão e articulações no topo.
 
 VISAT: risco concentrado em enfermagem, limpeza e obras.
 
+## Q3 — Você (~25 s) Lucas
 Q3 — Lucas (~25 s)
 Administração pública: só 11% do esperado. Educação e limpeza também abaixo.
 
 VISAT: cobrar CAT e fiscalizar — apagão, não segurança.
 
+## Q4 — Lia (~20 s) Lia Marinho 
 Q4 — Lia (~20 s)
 Fraturas graves já concentram peso no informal.
 
 VISAT: a rede de saúde mostra o que a CAT formal não captura.
 
+# Conclusão + limitações + ações — Lia (~1 min 10 s): Lia Marinho 
 *Conclusão + limitações + ações — Lia (~1 min 10 s):* 
 
 Três decisões que a VISAT pode tomar agora.Primeiro, risco visível: coleta de resíduos e hospitais — taxas altas e, no caso hospitalar, em alta.
@@ -91,6 +112,11 @@ Terceiro, apagão: administração pública notificou só cerca de 11% do espera
 
 Quarto, informal: já pesa nas fraturas graves que chegam à rede de saúde.Limitações que reconhecemos: a CAT tem cobertura irregular em alguns meses — por isso usamos só os meses com cobertura adequada. O recorte é por município, não por bairro, limitação da fonte oficial. As taxas absolutas ficam subestimadas; o indicador mais robusto é a comparação entre setores, esperado versus observado.Três ações concretas:
 
+**1. Fiscalização direcionada em coleta de resíduos e hospitais;**
+
+**2. Cobrança de CAT na administração pública, na educação e nos condomínios;**
+
+**3. Qualificação da triagem no SUS, para reduzir ocupação omissa e enxergar melhor o informal.**
 fiscalização direcionada em coleta de resíduos e hospitais;
 
 cobrança de CAT na administração pública, na educação e nos condomínios;
